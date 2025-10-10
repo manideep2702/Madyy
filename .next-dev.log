@@ -1,0 +1,253 @@
+   ▲ Next.js 15.5.3 (Turbopack)
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.0.128:3000
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 3.5s
+ ○ Compiling / ...
+ ✓ Compiled / in 20.8s
+ GET / 200 in 22531ms
+ ✓ Compiled in 24.1s
+ ✓ Compiled in 565ms
+ ✓ Compiled in 45.3s
+ ○ Compiling / ...
+ ✓ Compiled / in 1658ms
+ GET / 200 in 4786ms
+ ○ Compiling /_not-found/page ...
+ ✓ Compiled /_not-found/page in 5.6s
+ GET /layout 404 in 6685ms
+ ○ Compiling /profile ...
+ ✓ Compiled /profile in 52.3s
+ GET /profile 404 in 54751ms
+ ✓ Compiled in 84.7s
+ ⨯ ./node_modules/@supabase/supabase-js/dist/module/index.js:2:1
+Module not found: Can't resolve '@supabase/auth-js'
+[0m [90m 1 |[39m [36mimport[39m [33mSupabaseClient[39m [36mfrom[39m [32m'./SupabaseClient'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 2 |[39m [36mexport[39m [33m*[39m [36mfrom[39m [32m'@supabase/auth-js'[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 3 |[39m [36mexport[39m { [33mPostgrestError[39m[33m,[39m } [36mfrom[39m [32m'@supabase/postgrest-js'[39m[33m;[39m
+ [90m 4 |[39m [36mexport[39m { [33mFunctionsHttpError[39m[33m,[39m [33mFunctionsFetchError[39m[33m,[39m [33mFunctionsRelayError[39m[33m,[39m [33mFunctionsError[39m[33m,[39m [33mFunctionRegion[39m[33m,[39m } [36mfrom[39m [32m'@supabase/functions-js'[39m[33m;[39m
+ [90m 5 |[39m [36mexport[39m [33m*[39m [36mfrom[39m [32m'@supabase/realtime-js'[39m[33m;[39m[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./node_modules/@supabase/supabase-js/dist/module/index.js [Client Component Browser]
+    ./src/lib/supabase/client.ts [Client Component Browser]
+    ./src/components/auth/require-auth.tsx [Client Component Browser]
+    ./src/components/auth/require-auth.tsx [Server Component]
+    ./src/app/profile/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./node_modules/@supabase/supabase-js/dist/module/index.js [Client Component SSR]
+    ./src/lib/supabase/client.ts [Client Component SSR]
+    ./src/components/auth/require-auth.tsx [Client Component SSR]
+    ./src/components/auth/require-auth.tsx [Server Component]
+    ./src/app/profile/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ ⨯ ./node_modules/@supabase/supabase-js/dist/module/index.js:2:1
+Module not found: Can't resolve '@supabase/auth-js'
+[0m [90m 1 |[39m [36mimport[39m [33mSupabaseClient[39m [36mfrom[39m [32m'./SupabaseClient'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 2 |[39m [36mexport[39m [33m*[39m [36mfrom[39m [32m'@supabase/auth-js'[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 3 |[39m [36mexport[39m { [33mPostgrestError[39m[33m,[39m } [36mfrom[39m [32m'@supabase/postgrest-js'[39m[33m;[39m
+ [90m 4 |[39m [36mexport[39m { [33mFunctionsHttpError[39m[33m,[39m [33mFunctionsFetchError[39m[33m,[39m [33mFunctionsRelayError[39m[33m,[39m [33mFunctionsError[39m[33m,[39m [33mFunctionRegion[39m[33m,[39m } [36mfrom[39m [32m'@supabase/functions-js'[39m[33m;[39m
+ [90m 5 |[39m [36mexport[39m [33m*[39m [36mfrom[39m [32m'@supabase/realtime-js'[39m[33m;[39m[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./node_modules/@supabase/supabase-js/dist/module/index.js [Client Component Browser]
+    ./src/lib/supabase/client.ts [Client Component Browser]
+    ./src/components/auth/require-auth.tsx [Client Component Browser]
+    ./src/components/auth/require-auth.tsx [Server Component]
+    ./src/app/profile/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./node_modules/@supabase/supabase-js/dist/module/index.js [Client Component SSR]
+    ./src/lib/supabase/client.ts [Client Component SSR]
+    ./src/components/auth/require-auth.tsx [Client Component SSR]
+    ./src/components/auth/require-auth.tsx [Server Component]
+    ./src/app/profile/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ ⨯ ./node_modules/@supabase/supabase-js/dist/module/lib/SupabaseAuthClient.js:1:1
+Module not found: Can't resolve '@supabase/auth-js'
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { [33mAuthClient[39m } [36mfrom[39m [32m'@supabase/auth-js'[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mexport[39m [36mclass[39m [33mSupabaseAuthClient[39m [36mextends[39m [33mAuthClient[39m {
+ [90m 3 |[39m     constructor(options) {
+ [90m 4 |[39m         [36msuper[39m(options)[33m;[39m[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./node_modules/@supabase/supabase-js/dist/module/lib/SupabaseAuthClient.js [Client Component Browser]
+    ./node_modules/@supabase/supabase-js/dist/module/SupabaseClient.js [Client Component Browser]
+    ./node_modules/@supabase/supabase-js/dist/module/index.js [Client Component Browser]
+    ./src/lib/supabase/client.ts [Client Component Browser]
+    ./src/components/auth/require-auth.tsx [Client Component Browser]
+    ./src/components/auth/require-auth.tsx [Server Component]
+    ./src/app/profile/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./node_modules/@supabase/supabase-js/dist/module/lib/SupabaseAuthClient.js [Client Component SSR]
+    ./node_modules/@supabase/supabase-js/dist/module/SupabaseClient.js [Client Component SSR]
+    ./node_modules/@supabase/supabase-js/dist/module/index.js [Client Component SSR]
+    ./src/lib/supabase/client.ts [Client Component SSR]
+    ./src/components/auth/require-auth.tsx [Client Component SSR]
+    ./src/components/auth/require-auth.tsx [Server Component]
+    ./src/app/profile/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ ⨯ ./node_modules/@supabase/supabase-js/dist/module/lib/SupabaseAuthClient.js:1:1
+Module not found: Can't resolve '@supabase/auth-js'
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { [33mAuthClient[39m } [36mfrom[39m [32m'@supabase/auth-js'[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mexport[39m [36mclass[39m [33mSupabaseAuthClient[39m [36mextends[39m [33mAuthClient[39m {
+ [90m 3 |[39m     constructor(options) {
+ [90m 4 |[39m         [36msuper[39m(options)[33m;[39m[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./node_modules/@supabase/supabase-js/dist/module/lib/SupabaseAuthClient.js [Client Component Browser]
+    ./node_modules/@supabase/supabase-js/dist/module/SupabaseClient.js [Client Component Browser]
+    ./node_modules/@supabase/supabase-js/dist/module/index.js [Client Component Browser]
+    ./src/lib/supabase/client.ts [Client Component Browser]
+    ./src/components/auth/require-auth.tsx [Client Component Browser]
+    ./src/components/auth/require-auth.tsx [Server Component]
+    ./src/app/profile/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./node_modules/@supabase/supabase-js/dist/module/lib/SupabaseAuthClient.js [Client Component SSR]
+    ./node_modules/@supabase/supabase-js/dist/module/SupabaseClient.js [Client Component SSR]
+    ./node_modules/@supabase/supabase-js/dist/module/index.js [Client Component SSR]
+    ./src/lib/supabase/client.ts [Client Component SSR]
+    ./src/components/auth/require-auth.tsx [Client Component SSR]
+    ./src/components/auth/require-auth.tsx [Server Component]
+    ./src/app/profile/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ ⨯ ./node_modules/@supabase/supabase-js/dist/module/lib/SupabaseAuthClient.js:1:1
+Module not found: Can't resolve '@supabase/auth-js'
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { [33mAuthClient[39m } [36mfrom[39m [32m'@supabase/auth-js'[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mexport[39m [36mclass[39m [33mSupabaseAuthClient[39m [36mextends[39m [33mAuthClient[39m {
+ [90m 3 |[39m     constructor(options) {
+ [90m 4 |[39m         [36msuper[39m(options)[33m;[39m[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./node_modules/@supabase/supabase-js/dist/module/lib/SupabaseAuthClient.js [Client Component Browser]
+    ./node_modules/@supabase/supabase-js/dist/module/SupabaseClient.js [Client Component Browser]
+    ./node_modules/@supabase/supabase-js/dist/module/index.js [Client Component Browser]
+    ./src/lib/supabase/client.ts [Client Component Browser]
+    ./src/components/auth/require-auth.tsx [Client Component Browser]
+    ./src/components/auth/require-auth.tsx [Server Component]
+    ./src/app/profile/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./node_modules/@supabase/supabase-js/dist/module/lib/SupabaseAuthClient.js [Client Component SSR]
+    ./node_modules/@supabase/supabase-js/dist/module/SupabaseClient.js [Client Component SSR]
+    ./node_modules/@supabase/supabase-js/dist/module/index.js [Client Component SSR]
+    ./src/lib/supabase/client.ts [Client Component SSR]
+    ./src/components/auth/require-auth.tsx [Client Component SSR]
+    ./src/components/auth/require-auth.tsx [Server Component]
+    ./src/app/profile/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ ⨯ ./node_modules/@supabase/supabase-js/dist/module/lib/SupabaseAuthClient.js:1:1
+Module not found: Can't resolve '@supabase/auth-js'
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { [33mAuthClient[39m } [36mfrom[39m [32m'@supabase/auth-js'[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mexport[39m [36mclass[39m [33mSupabaseAuthClient[39m [36mextends[39m [33mAuthClient[39m {
+ [90m 3 |[39m     constructor(options) {
+ [90m 4 |[39m         [36msuper[39m(options)[33m;[39m[0m
+
+
+
+Import traces:
+  Client Component Browser:
+    ./node_modules/@supabase/supabase-js/dist/module/lib/SupabaseAuthClient.js [Client Component Browser]
+    ./node_modules/@supabase/supabase-js/dist/module/SupabaseClient.js [Client Component Browser]
+    ./node_modules/@supabase/supabase-js/dist/module/index.js [Client Component Browser]
+    ./src/lib/supabase/client.ts [Client Component Browser]
+    ./src/components/auth/require-auth.tsx [Client Component Browser]
+    ./src/components/auth/require-auth.tsx [Server Component]
+    ./src/app/profile/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./node_modules/@supabase/supabase-js/dist/module/lib/SupabaseAuthClient.js [Client Component SSR]
+    ./node_modules/@supabase/supabase-js/dist/module/SupabaseClient.js [Client Component SSR]
+    ./node_modules/@supabase/supabase-js/dist/module/index.js [Client Component SSR]
+    ./src/lib/supabase/client.ts [Client Component SSR]
+    ./src/components/auth/require-auth.tsx [Client Component SSR]
+    ./src/components/auth/require-auth.tsx [Server Component]
+    ./src/app/profile/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ ✓ Compiled in 38s
+
+-----
+[1m[31mFATAL[39m[0m: An unexpected Turbopack error occurred. A panic log has been written to /var/folders/97/jw0b96fn06d0qfwcctq5dw700000gn/T/next-panic-e5611af3b64fa8a38794599533a92974.log.
+
+To help make Turbopack better, report this error by clicking here: https://github.com/vercel/next.js/discussions/new?category=turbopack-error-report&title=Turbopack%20Error%3A%20Expected%20file%20content%20for%20file&body=Turbopack%20version%3A%20%60v15.5.2-3-gdb56d7759%60%0ANext.js%20version%3A%20%600.0.0%60%0A%0AError%20message%3A%0A%60%60%60%0ATurbopack%20Error%3A%20Expected%20file%20content%20for%20file%0A%60%60%60&labels=Turbopack,Turbopack%20Panic%20Backtrace
+-----
+
+
+-----
+[1m[31mFATAL[39m[0m: An unexpected Turbopack error occurred. A panic log has been written to /var/folders/97/jw0b96fn06d0qfwcctq5dw700000gn/T/next-panic-e5611af3b64fa8a38794599533a92974.log.
+
+To help make Turbopack better, report this error by clicking here: https://github.com/vercel/next.js/discussions/new?category=turbopack-error-report&title=Turbopack%20Error%3A%20Expected%20file%20content%20for%20file&body=Turbopack%20version%3A%20%60v15.5.2-3-gdb56d7759%60%0ANext.js%20version%3A%20%600.0.0%60%0A%0AError%20message%3A%0A%60%60%60%0ATurbopack%20Error%3A%20Expected%20file%20content%20for%20file%0A%60%60%60&labels=Turbopack,Turbopack%20Panic%20Backtrace
+-----
+
+
+-----
+[1m[31mFATAL[39m[0m: An unexpected Turbopack error occurred. A panic log has been written to /var/folders/97/jw0b96fn06d0qfwcctq5dw700000gn/T/next-panic-e5611af3b64fa8a38794599533a92974.log.
+
+To help make Turbopack better, report this error by clicking here: https://github.com/vercel/next.js/discussions/new?category=turbopack-error-report&title=Turbopack%20Error%3A%20Next.js%20package%20not%20found&body=Turbopack%20version%3A%20%60v15.5.2-3-gdb56d7759%60%0ANext.js%20version%3A%20%600.0.0%60%0A%0AError%20message%3A%0A%60%60%60%0ATurbopack%20Error%3A%20Next.js%20package%20not%20found%0A%60%60%60&labels=Turbopack,Turbopack%20Panic%20Backtrace
+-----
+
+
+-----
+[1m[31mFATAL[39m[0m: An unexpected Turbopack error occurred. A panic log has been written to /var/folders/97/jw0b96fn06d0qfwcctq5dw700000gn/T/next-panic-e5611af3b64fa8a38794599533a92974.log.
+
+To help make Turbopack better, report this error by clicking here: https://github.com/vercel/next.js/discussions/new?category=turbopack-error-report&title=Turbopack%20Error%3A%20Next.js%20package%20not%20found&body=Turbopack%20version%3A%20%60v15.5.2-3-gdb56d7759%60%0ANext.js%20version%3A%20%600.0.0%60%0A%0AError%20message%3A%0A%60%60%60%0ATurbopack%20Error%3A%20Next.js%20package%20not%20found%0A%60%60%60&labels=Turbopack,Turbopack%20Panic%20Backtrace
+-----
+
+Error [TurbopackInternalError]: Next.js package not found
+
+Debug info:
+- Execution of get_entrypoints_with_issues_operation failed
+- Execution of EntrypointsOperation::new failed
+- Execution of Project::entrypoints failed
+- Execution of AppProject::routes failed
+- Execution of directory_tree_to_entrypoints_internal failed
+- Execution of directory_tree_to_loader_tree failed
+- Execution of get_next_package failed
+- Next.js package not found
+    at <unknown> (TurbopackInternalError: Next.js package not found) {
+  location: undefined
+}
+[?25h

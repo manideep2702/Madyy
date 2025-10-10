@@ -1,0 +1,335 @@
+-- Annadanam backend aligned to existing "Bookings" table
+-- Run this in Supabase SQL editor once
+
+-- Create a canonical Slots table tracking capacity by date/session
+CREATE TABLE IF NOT EXISTS public."Slots" (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  date date NOT NULL,
+  session text NOT NULL,
+  capacity integer NOT NULL,
+  status text NOT NULL DEFAULT 'open' CHECK (status IN ('open','closed')),
+  CONSTRAINT slots_unique UNIQUE (date, session)
+);
+
+-- Drop legacy constraint if it exists (from Morning/Evening only)
+DO $$
+BEGIN
+  BEGIN
+    ALTER TABLE public."Slots" DROP CONSTRAINT IF EXISTS slots_session_check;
+  EXCEPTION WHEN undefined_object THEN NULL; END;
+  BEGIN
+    ALTER TABLE public."Slots" DROP CONSTRAINT IF EXISTS "Slots_session_check";
+  EXCEPTION WHEN undefined_object THEN NULL; END;
+END $$;
+
+ALTER TABLE public."Slots" ENABLE ROW LEVEL SECURITY;
+DO $$
+BEGIN
+  CREATE POLICY slots_select_public ON public."Slots"
+    FOR SELECT USING (true);
+EXCEPTION WHEN duplicate_object THEN
+  -- policy already exists
+  NULL;
+END $$;
+
+-- Enforce season window on Slots (Nov 5 to Jan 7 inclusive)
+DO $$
+BEGIN
+  -- Recreate constraint with current season
+  BEGIN
+    ALTER TABLE public."Slots" DROP CONSTRAINT IF EXISTS slots_date_in_season;
+  EXCEPTION WHEN undefined_object THEN NULL; END;
+  ALTER TABLE public."Slots"
+    ADD CONSTRAINT slots_date_in_season
+    CHECK (
+      (date >= DATE '2025-11-05' AND date <= DATE '2026-01-07')
+      OR date = DATE '2025-10-10'
+    );
+END $$;
+
+-- Ensure Bookings table exists (you said it already exists)
+CREATE TABLE IF NOT EXISTS public."Bookings" (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid()
+);
+
+-- Ensure required columns exist on Bookings
+ALTER TABLE public."Bookings"
+  ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now(),
+  ADD COLUMN IF NOT EXISTS date date,
+  ADD COLUMN IF NOT EXISTS session text,
+  ADD COLUMN IF NOT EXISTS user_id uuid NULL REFERENCES auth.users(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS name text,
+  ADD COLUMN IF NOT EXISTS email text,
+  ADD COLUMN IF NOT EXISTS phone text,
+  ADD COLUMN IF NOT EXISTS qty integer NOT NULL DEFAULT 1,
+  ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'confirmed';
+
+-- Enforce season window on Bookings as a safety net
+DO $$
+BEGIN
+  BEGIN
+    ALTER TABLE public."Bookings" DROP CONSTRAINT IF EXISTS bookings_date_in_season;
+  EXCEPTION WHEN undefined_object THEN NULL; END;
+  ALTER TABLE public."Bookings"
+    ADD CONSTRAINT bookings_date_in_season
+    CHECK (
+      (date >= DATE '2025-11-05' AND date <= DATE '2026-01-07')
+      OR date = DATE '2025-10-10'
+    );
+END $$;
+
+-- Helpful unique index to prevent double booking per user (allows NULL user_id)
+CREATE UNIQUE INDEX IF NOT EXISTS bookings_unique_per_user_idx
+  ON public."Bookings" (date, session, user_id)
+  WHERE user_id IS NOT NULL;
+
+ALTER TABLE public."Bookings" ENABLE ROW LEVEL SECURITY;
+DO $$
+BEGIN
+  CREATE POLICY bookings_select_own ON public."Bookings"
+    FOR SELECT TO authenticated USING (auth.uid() = user_id);
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$
+BEGIN
+  CREATE POLICY bookings_insert_own ON public."Bookings"
+    FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$
+BEGIN
+  CREATE POLICY bookings_update_own ON public."Bookings"
+    FOR UPDATE TO authenticated USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$
+BEGIN
+  CREATE POLICY bookings_select_service ON public."Bookings"
+    FOR SELECT TO service_role USING (true);
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+-- Helper view to compute booked_count per date/session
+CREATE OR REPLACE VIEW public.slot_booked_counts AS
+SELECT
+  b.date,
+  b.session,
+  COALESCE(SUM(CASE WHEN b.status = 'confirmed' THEN b.qty ELSE 0 END), 0)::int AS booked_count
+FROM public."Bookings" b
+GROUP BY b.date, b.session;
+
+-- RPC to list slots with remaining counts for a given date
+CREATE OR REPLACE FUNCTION public.get_annadanam_slots(d date)
+RETURNS TABLE (
+  date date,
+  session text,
+  capacity integer,
+  booked_count integer,
+  remaining integer,
+  status text
+) AS $$
+BEGIN
+  -- Return empty set if out of season window
+  IF NOT (d BETWEEN DATE '2025-11-05' AND DATE '2026-01-07' OR d = DATE '2025-10-10') THEN
+    RETURN;
+  END IF;
+  RETURN QUERY
+  SELECT s.date,
+         s.session,
+         s.capacity,
+         COALESCE(c.booked_count, 0) AS booked_count,
+         GREATEST(s.capacity - COALESCE(c.booked_count, 0), 0) AS remaining,
+         s.status
+  FROM public."Slots" s
+  LEFT JOIN public.slot_booked_counts c
+    ON c.date = s.date AND c.session = s.session
+  WHERE s.date = d
+    AND s.session IN (
+      '12:45 PM - 1:30 PM',
+      '1:30 PM - 2:00 PM',
+      '2:00 PM - 2:30 PM',
+      '2:30 PM - 3:00 PM',
+      '8:00 PM - 8:30 PM',
+      '8:30 PM - 9:00 PM',
+      '9:00 PM - 9:30 PM',
+      '9:30 PM - 10:00 PM'
+    )
+  ORDER BY CASE s.session
+    WHEN '12:45 PM - 1:30 PM' THEN 1
+    WHEN '1:30 PM - 2:00 PM' THEN 2
+    WHEN '2:00 PM - 2:30 PM' THEN 3
+    WHEN '2:30 PM - 3:00 PM' THEN 4
+    WHEN '8:00 PM - 8:30 PM' THEN 5
+    WHEN '8:30 PM - 9:00 PM' THEN 6
+    WHEN '9:00 PM - 9:30 PM' THEN 7
+    WHEN '9:30 PM - 10:00 PM' THEN 8
+    ELSE 999 END;
+END;
+$$ LANGUAGE plpgsql STABLE;
+
+-- RPC to reserve booking by date/session (atomic capacity check)
+CREATE OR REPLACE FUNCTION public.reserve_annadanam_by_date(
+  d date,
+  s text,
+  user_id uuid,
+  name text,
+  email text,
+  phone text,
+  qty integer
+)
+RETURNS public."Bookings" AS $$
+DECLARE
+  slot_rec RECORD;
+  booked int;
+  new_row public."Bookings";
+  start_local time;
+  end_local time;
+  start_at timestamptz;
+  last_start timestamptz;
+  group_total int := 0;
+  is_afternoon boolean := false;
+BEGIN
+  -- Enforce season window
+  IF NOT (d BETWEEN DATE '2025-11-05' AND DATE '2026-01-07' OR d = DATE '2025-10-10') THEN
+    RAISE EXCEPTION 'Out of Annadanam season';
+  END IF;
+  IF qty IS NULL OR qty < 1 OR qty > 3 THEN
+    RAISE EXCEPTION 'Invalid qty';
+  END IF;
+  IF email IS NULL OR length(trim(email)) = 0 THEN
+    RAISE EXCEPTION 'Email required';
+  END IF;
+  -- Resolve fixed session times
+  IF s = '12:45 PM - 1:30 PM' THEN start_local := time '12:45'; end_local := time '13:30';
+  ELSIF s = '1:30 PM - 2:00 PM' THEN start_local := time '13:30'; end_local := time '14:00';
+  ELSIF s = '2:00 PM - 2:30 PM' THEN start_local := time '14:00'; end_local := time '14:30';
+  ELSIF s = '2:30 PM - 3:00 PM' THEN start_local := time '14:30'; end_local := time '15:00';
+  ELSIF s = '8:00 PM - 8:30 PM' THEN start_local := time '20:00'; end_local := time '20:30';
+  ELSIF s = '8:30 PM - 9:00 PM' THEN start_local := time '20:30'; end_local := time '21:00';
+  ELSIF s = '9:00 PM - 9:30 PM' THEN start_local := time '21:00'; end_local := time '21:30';
+  ELSIF s = '9:30 PM - 10:00 PM' THEN start_local := time '21:30'; end_local := time '22:00';
+  ELSE
+    RAISE EXCEPTION 'Invalid session label';
+  END IF;
+
+  -- Build absolute timestamps in IST (+05:30)
+  start_at := (d::text || ' ' || start_local::text || '+05:30')::timestamptz;
+  last_start := (d::text || ' 21:30+05:30')::timestamptz; -- last session start
+
+  -- Enforce booking open/close window
+  IF now() < start_at - interval '24 hours' THEN
+    RAISE EXCEPTION 'Booking opens 24 hours before the session start';
+  END IF;
+  IF s = '9:30 PM - 10:00 PM' AND now() >= last_start - interval '30 minutes' THEN
+    RAISE EXCEPTION 'Booking closed 30 minutes before the last session';
+  END IF;
+  IF now() >= start_at THEN
+    RAISE EXCEPTION 'Slot already started';
+  END IF;
+
+  SELECT * INTO slot_rec FROM public."Slots" WHERE date = d AND session = s FOR UPDATE;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Slot not found';
+  END IF;
+  IF slot_rec.status <> 'open' THEN
+    RAISE EXCEPTION 'Slot is closed';
+  END IF;
+  -- Determine session group and enforce per-day group cap (Afternoon 150, Evening 150)
+  is_afternoon := s = ANY (ARRAY[
+    '12:45 PM - 1:30 PM',
+    '1:30 PM - 2:00 PM',
+    '2:00 PM - 2:30 PM',
+    '2:30 PM - 3:00 PM'
+  ]);
+  -- Lock all slots for this group to serialize concurrent reservations across batches
+  PERFORM 1 FROM public."Slots"
+    WHERE date = d AND session = ANY (
+      CASE WHEN is_afternoon THEN ARRAY['12:45 PM - 1:30 PM','1:30 PM - 2:00 PM','2:00 PM - 2:30 PM','2:30 PM - 3:00 PM']
+           ELSE ARRAY['8:00 PM - 8:30 PM','8:30 PM - 9:00 PM','9:00 PM - 9:30 PM','9:30 PM - 10:00 PM'] END
+    )
+    FOR UPDATE;
+  SELECT COALESCE(SUM(CASE WHEN b.status = 'confirmed' THEN b.qty ELSE 0 END), 0)
+    INTO group_total
+    FROM public."Bookings" AS b
+    WHERE b.date = d AND b.session = ANY (
+      CASE WHEN is_afternoon THEN ARRAY['12:45 PM - 1:30 PM','1:30 PM - 2:00 PM','2:00 PM - 2:30 PM','2:30 PM - 3:00 PM']
+           ELSE ARRAY['8:00 PM - 8:30 PM','8:30 PM - 9:00 PM','9:00 PM - 9:30 PM','9:30 PM - 10:00 PM'] END
+    );
+  IF group_total + qty > 150 THEN
+    RAISE EXCEPTION 'Session full';
+  END IF;
+  SELECT COALESCE(SUM(CASE WHEN b.status = 'confirmed' THEN b.qty ELSE 0 END), 0)
+    INTO booked
+    FROM public."Bookings" AS b
+    WHERE b.date = d AND b.session = s;
+  IF booked + qty > slot_rec.capacity THEN
+    RAISE EXCEPTION 'Slot full';
+  END IF;
+  INSERT INTO public."Bookings" (date, session, user_id, name, email, phone, qty)
+  VALUES (d, s, user_id, name, email, phone, qty)
+  RETURNING * INTO new_row;
+  -- Auto-close slot when capacity reached
+  IF (booked + qty) >= slot_rec.capacity THEN
+    UPDATE public."Slots" SET status = 'closed' WHERE date = d AND session = s;
+  END IF;
+  -- Auto-close the entire session group when group cap reached
+  IF (group_total + qty) >= 150 THEN
+    UPDATE public."Slots"
+      SET status = 'closed'
+      WHERE date = d AND session = ANY (
+        CASE WHEN is_afternoon THEN ARRAY['12:45 PM - 1:30 PM','1:30 PM - 2:00 PM','2:00 PM - 2:30 PM','2:30 PM - 3:00 PM']
+             ELSE ARRAY['8:00 PM - 8:30 PM','8:30 PM - 9:00 PM','9:00 PM - 9:30 PM','9:30 PM - 10:00 PM'] END
+      );
+  END IF;
+  RETURN new_row;
+EXCEPTION WHEN unique_violation THEN
+  RAISE EXCEPTION 'You already booked this session';
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions;
+
+-- Ensure RPCs are callable from API roles
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.get_annadanam_slots(date) TO anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.reserve_annadanam_by_date(date, text, uuid, text, text, text, integer) TO authenticated, service_role;
+
+-- Optional: seed Slots for the 2025-11-05 to 2026-01-07 season
+-- Run once; safe to re-run (uses ON CONFLICT DO NOTHING)
+DO $$
+DECLARE
+  v_date date := DATE '2025-11-05';
+BEGIN
+  WHILE v_date <= DATE '2026-01-07' LOOP
+    -- Afternoon sessions
+    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (v_date, '12:45 PM - 1:30 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
+    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (v_date, '1:30 PM - 2:00 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
+    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (v_date, '2:00 PM - 2:30 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
+    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (v_date, '2:30 PM - 3:00 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
+    -- Evening sessions
+    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (v_date, '8:00 PM - 8:30 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
+    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (v_date, '8:30 PM - 9:00 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
+    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (v_date, '9:00 PM - 9:30 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
+    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (v_date, '9:30 PM - 10:00 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
+    v_date := v_date + INTERVAL '1 day';
+  END LOOP;
+  -- Extra special date outside main window
+  PERFORM 1;
+  IF NOT EXISTS (
+    SELECT 1 FROM public."Slots" WHERE date = DATE '2025-10-10'
+  ) THEN
+    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-10', '12:45 PM - 1:30 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
+    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-10', '1:30 PM - 2:00 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
+    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-10', '2:00 PM - 2:30 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
+    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-10', '2:30 PM - 3:00 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
+    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-10', '8:00 PM - 8:30 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
+    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-10', '8:30 PM - 9:00 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
+    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-10', '9:00 PM - 9:30 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
+    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-10', '9:30 PM - 10:00 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
+  END IF;
+  -- Ensure all seeded/legacy slots use capacity 40 per time slot
+  UPDATE public."Slots"
+    SET capacity = 40
+    WHERE (date BETWEEN DATE '2025-11-05' AND DATE '2026-01-07' OR date = DATE '2025-10-10')
+      AND session IN (
+        '12:45 PM - 1:30 PM','1:30 PM - 2:00 PM','2:00 PM - 2:30 PM','2:30 PM - 3:00 PM',
+        '8:00 PM - 8:30 PM','8:30 PM - 9:00 PM','9:00 PM - 9:30 PM','9:30 PM - 10:00 PM'
+      );
+END $$;
