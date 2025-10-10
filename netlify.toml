@@ -6,6 +6,7 @@
   NODE_VERSION = "20.19.5"
   LIGHTNINGCSS_IGNORE_NATIVE = "1"
   LIGHTNINGCSS_WASM = "1"
+  CSS_TRANSFORMER_WASM = "1"
   # Avoid noisy npm output in CI
   NPM_FLAGS = "--no-audit --fund=false"
 
