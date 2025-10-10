@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useAlert } from "@/components/ui/alert-provider";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
-export default function AuthCallbackPage() {
+function AuthCallbackContent() {
   const router = useRouter();
   const params = useSearchParams();
   const { show } = useAlert();
@@ -211,5 +211,17 @@ export default function AuthCallbackPage() {
     <main className="min-h-[60vh] flex items-center justify-center text-sm text-muted-foreground">
       Completing sign-in…
     </main>
+  );
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-[60vh] flex items-center justify-center text-sm text-muted-foreground">
+        Loading…
+      </main>
+    }>
+      <AuthCallbackContent />
+    </Suspense>
   );
 }
