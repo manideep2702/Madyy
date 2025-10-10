@@ -10,6 +10,7 @@ export default function Page() {
   const hasSupabaseEnv = Boolean(
     process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   );
+  const adminEmailEnv = (process.env.NEXT_PUBLIC_ADMIN_EMAIL || "").toLowerCase();
   const handleSignIn = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = event.currentTarget as HTMLFormElement;
@@ -19,19 +20,24 @@ export default function Page() {
       show({ title: "Missing details", description: "Please enter email and password.", variant: "warning" });
       return;
     }
-    // 1) Try admin login first (server validates credentials securely)
-    try {
-      const adminRes = await fetch("/api/admin/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      if (adminRes.ok) {
-        // Successful admin auth — go to admin panel
-        window.location.assign("/admin");
+    // 1) If the email matches configured admin email, try admin login
+    if (adminEmailEnv && email.toLowerCase() === adminEmailEnv) {
+      try {
+        const adminRes = await fetch("/api/admin/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+        if (adminRes.ok) {
+          window.location.assign("/admin");
+          return;
+        }
+        // If admin login fails with matching email, show error and stop here
+        const msg = await adminRes.json().catch(() => ({} as any));
+        show({ title: "Admin sign-in failed", description: msg?.error || "Invalid admin credentials", variant: "error" });
         return;
-      }
-    } catch {}
+      } catch {}
+    }
     // 2) Otherwise continue with normal user sign-in.
     // Check if this email belongs to a Google-only account (if server key configured)
     try {
@@ -43,8 +49,8 @@ export default function Page() {
           const hasGoogle = providers.includes("google");
           const hasEmail = providers.includes("email");
           if (hasGoogle && !hasEmail) {
-            show({ title: "Use Google Sign-in", description: "This email is linked to Google. Continue with Google to access your account.", variant: "info", durationMs: 5000 });
-            return;
+            // Inform but do not block; allow password attempt in case password was set later
+            show({ title: "Google-linked email", description: "This email was previously used with Google. If password sign-in fails, use 'Continue with Google' or set a password via Sign Up/OTP or Forgot Password.", variant: "info", durationMs: 5000 });
           }
         }
       }

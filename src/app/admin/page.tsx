@@ -9,6 +9,8 @@ export default function AdminPage() {
   const [password, setPassword] = useState("");
   const [start, setStart] = useState<string>("");
   const [end, setEnd] = useState<string>("");
+  const [annaDate, setAnnaDate] = useState<string>("");
+  const [annaSession, setAnnaSession] = useState<string>("all");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { show } = useAlert();
@@ -55,13 +57,23 @@ export default function AdminPage() {
     if (typeof window !== "undefined") window.location.assign("/");
   };
 
-  const download = (format: "json" | "excel") => {
+  const download = (format: "json" | "excel" | "pdf") => {
     const params = new URLSearchParams();
     params.set("format", format);
     if (start) params.set("start", start);
     if (end) params.set("end", end);
     const url = `/api/admin/export?${params.toString()}`;
     // trigger browser download
+    window.location.href = url;
+  };
+
+  const downloadAnnadanam = (format: "json" | "excel" | "pdf") => {
+    const params = new URLSearchParams();
+    params.set("dataset", "annadanam");
+    params.set("format", format);
+    if (annaDate) params.set("date", annaDate);
+    if (annaSession) params.set("session", annaSession);
+    const url = `/api/admin/export?${params.toString()}`;
     window.location.href = url;
   };
 
@@ -153,8 +165,50 @@ export default function AdminPage() {
           <div className="flex gap-3 pt-2">
             <button onClick={() => download("json")} className="rounded bg-black text-white px-4 py-2">Download JSON</button>
             <button onClick={() => download("excel")} className="rounded border px-4 py-2">Download Excel</button>
+            <button onClick={() => download("pdf")} className="rounded border px-4 py-2">Download PDF</button>
           </div>
           <p className="text-xs text-muted-foreground">Date filtering applies to tables with a "created_at" column.</p>
+        </div>
+
+        <div className="rounded-xl border p-6 space-y-4 bg-card/70 mt-6">
+          <h2 className="font-semibold">Annadanam List</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-sm" htmlFor="annaDate">Date</label>
+              <input
+                id="annaDate"
+                type="date"
+                className="w-full rounded border px-3 py-2 bg-background"
+                value={annaDate}
+                onChange={(e) => setAnnaDate(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm" htmlFor="annaSession">Timing</label>
+              <select
+                id="annaSession"
+                className="w-full rounded border px-3 py-2 bg-background"
+                value={annaSession}
+                onChange={(e) => setAnnaSession(e.target.value)}
+              >
+                <option value="all">All Timings</option>
+                <option>12:45 PM - 1:30 PM</option>
+                <option>1:30 PM - 2:00 PM</option>
+                <option>2:00 PM - 2:30 PM</option>
+                <option>2:30 PM - 3:00 PM</option>
+                <option>8:00 PM - 8:30 PM</option>
+                <option>8:30 PM - 9:00 PM</option>
+                <option>9:00 PM - 9:30 PM</option>
+                <option>9:30 PM - 10:00 PM</option>
+              </select>
+            </div>
+          </div>
+          <div className="flex gap-3 pt-2 flex-wrap">
+            <button onClick={() => downloadAnnadanam("json")} className="rounded bg-black text-white px-4 py-2">Download JSON</button>
+            <button onClick={() => downloadAnnadanam("excel")} className="rounded border px-4 py-2">Download Excel</button>
+            <button onClick={() => downloadAnnadanam("pdf")} className="rounded border px-4 py-2">Download PDF</button>
+          </div>
+          <p className="text-xs text-muted-foreground">Exports Annadanam bookings for the selected date and timing.</p>
         </div>
       </div>
     </main>

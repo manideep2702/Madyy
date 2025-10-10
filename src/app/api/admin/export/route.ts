@@ -119,13 +119,329 @@ async function toExcelWithImages(dataByTable: Record<string, unknown[]>) {
   return buf;
 }
 
+async function toGenericPDF(title: string, dataByTable: Record<string, unknown[]>) {
+  const { PDFDocument, StandardFonts, rgb } = await import("pdf-lib");
+  const pdfDoc = await PDFDocument.create();
+  const margin = 40;
+  const pageSize: [number, number] = [595.28, 841.89]; // A4
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const baseSize = 9;
+  const headerSize = 12;
+  const sectionGap = 16;
+  const lineGap = 3;
+  const rowPaddingX = 5;
+  const rowPaddingY = 5;
+  const innerWidth = pageSize[0] - margin * 2;
+
+  const addPage = () => {
+    const page = pdfDoc.addPage(pageSize);
+    const { width, height } = page.getSize();
+    let y = height - margin;
+    page.drawText(title, { x: margin, y: y - 18, size: 16, font: bold, color: rgb(0, 0, 0) });
+    y -= 26;
+    page.drawText(`Generated: ${new Date().toLocaleString()}`,
+      { x: margin, y: y - 10, size: 10, font, color: rgb(0.27, 0.27, 0.27) });
+    y -= 20;
+    return { page, width, height, y };
+  };
+
+  function wrapText(text: string, maxWidth: number) {
+    if (!text) return [""];
+    const words = String(text).split(/\s+/);
+    const lines: string[] = [];
+    let line = "";
+    for (const w of words) {
+      const candidate = line ? line + " " + w : w;
+      if (font.widthOfTextAtSize(candidate, baseSize) <= maxWidth) {
+        line = candidate;
+        continue;
+      }
+      if (line) {
+        lines.push(line);
+        line = "";
+      }
+      // Break long word into multiple chunks that fit
+      let rest = w;
+      while (rest.length) {
+        let slice = "";
+        let i = 0;
+        while (i < rest.length) {
+          const next = slice + rest[i];
+          if (font.widthOfTextAtSize(next, baseSize) > maxWidth) break;
+          slice = next;
+          i++;
+        }
+        if (!slice) {
+          // Extremely narrow column fallback
+          slice = rest[0];
+          i = 1;
+        }
+        lines.push(slice);
+        rest = rest.slice(i);
+      }
+    }
+    if (line) lines.push(line);
+    return lines;
+  }
+
+  let { page, width, height, y } = addPage();
+  const entries = Object.entries(dataByTable);
+  const rowLineHeight = baseSize + lineGap;
+  const maxColumns = 8;
+
+  for (let t = 0; t < entries.length; t++) {
+    const [tableName, items] = entries[t];
+    const rows = Array.isArray(items) ? (items as Record<string, unknown>[]) : [];
+    if (!rows.length) continue;
+
+    // Section header
+    const sectionTitle = `${tableName} (${rows.length})`;
+    if (y - 24 < margin) { ({ page, width, height, y } = addPage()); }
+    page.drawText(sectionTitle, { x: margin, y: y - 14, size: 13, font: bold, color: rgb(0, 0, 0) });
+    y -= 18;
+
+    // Compute columns (union of keys, limited)
+    const allKeys = Array.from(rows.reduce((set, r) => { Object.keys(r || {}).forEach((k) => set.add(k)); return set; }, new Set<string>()));
+    const keys = allKeys.slice(0, maxColumns);
+    const colWidth = Math.floor(innerWidth / keys.length);
+
+    // Header row background
+    let x = margin;
+    const headerHeight = headerSize + rowPaddingY * 2 - 2;
+    for (const _ of keys) {
+      page.drawRectangle({ x, y: y - headerHeight, width: colWidth, height: headerHeight, color: rgb(0.92, 0.92, 0.96) });
+      x += colWidth;
+    }
+    // Header row text
+    x = margin;
+    for (const key of keys) {
+      page.drawText(key, { x: x + rowPaddingX, y: y - rowPaddingY - headerSize + 2, size: headerSize, font: bold, color: rgb(0, 0, 0) });
+      x += colWidth;
+    }
+    y -= headerHeight;
+
+    // Rows
+    let rowIndex = 0;
+    for (const r of rows) {
+      // Convert to string values
+      const vals = keys.map((k) => {
+        const v = (r as any)[k];
+        if (v == null) return "";
+        if (v instanceof Date) return v.toISOString();
+        if (typeof v === "object") return JSON.stringify(v);
+        return String(v);
+      });
+      // Wrap per cell
+      const cellLines = vals.map((v) => wrapText(v, colWidth - rowPaddingX * 2));
+      const maxLines = Math.max(...cellLines.map((ls) => ls.length), 1);
+      const rowHeight = maxLines * rowLineHeight + rowPaddingY * 2;
+      if (y - rowHeight < margin + 10) {
+        ({ page, width, height, y } = addPage());
+        // Re-draw section header for continuity
+        page.drawText(sectionTitle, { x: margin, y: y - 14, size: 13, font: bold, color: rgb(0, 0, 0) });
+        y -= 18;
+        // Re-draw header row
+        let xx = margin;
+        for (const _ of keys) {
+          page.drawRectangle({ x: xx, y: y - headerHeight, width: colWidth, height: headerHeight, color: rgb(0.92, 0.92, 0.96) });
+          xx += colWidth;
+        }
+        xx = margin;
+        for (const key of keys) {
+          page.drawText(key, { x: xx + rowPaddingX, y: y - rowPaddingY - headerSize + 2, size: headerSize, font: bold, color: rgb(0, 0, 0) });
+          xx += colWidth;
+        }
+        y -= headerHeight;
+        rowIndex = 0;
+      }
+
+      if (rowIndex % 2 === 1) {
+        page.drawRectangle({ x: margin, y: y - rowHeight, width: innerWidth, height: rowHeight, color: rgb(0.98, 0.98, 0.995) });
+      }
+      // Borders + text
+      let xx = margin;
+      for (let i = 0; i < keys.length; i++) {
+        page.drawRectangle({ x: xx, y: y - rowHeight, width: colWidth, height: rowHeight, borderColor: rgb(0.85, 0.85, 0.9), borderWidth: 0.5, color: undefined });
+        let ty = y - rowPaddingY - baseSize;
+        for (const ln of cellLines[i]) {
+          page.drawText(ln, { x: xx + rowPaddingX, y: ty, size: baseSize, font, color: rgb(0.1, 0.1, 0.1) });
+          ty -= rowLineHeight;
+        }
+        xx += colWidth;
+      }
+      y -= rowHeight;
+      rowIndex++;
+    }
+
+    y -= sectionGap;
+  }
+
+  const bytes = await pdfDoc.save();
+  return Buffer.from(bytes);
+}
+async function toAnnadanamPDF(title: string, rows: any[]) {
+  const { PDFDocument, StandardFonts, rgb } = await import("pdf-lib");
+  const pdfDoc = await PDFDocument.create();
+  const margin = 40;
+
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const baseSize = 10;
+  const headerSize = 11;
+  const lineGap = 3;
+  const rowPaddingX = 6;
+  const rowPaddingY = 6;
+
+  const innerWidth = 595.28 - margin * 2; // A4 width - margins
+  // Column layout tuned to fit innerWidth exactly
+  const columns = [
+    { key: "date", label: "Date", width: 60 },
+    { key: "session", label: "Session", width: 140 },
+    { key: "name", label: "Name", width: 145 },
+    { key: "qty", label: "Qty", width: 35 },
+    { key: "status", label: "Status", width: 65 },
+    { key: "phone", label: "Phone", width: 70 },
+  ];
+
+  const sumWidths = columns.reduce((s, c) => s + c.width, 0);
+  // Fallback: scale columns if widths drift
+  const scale = innerWidth / sumWidths;
+  if (Math.abs(1 - scale) > 0.01) columns.forEach((c) => (c.width = Math.floor(c.width * scale)));
+
+  const addPage = () => {
+    const page = pdfDoc.addPage([595.28, 841.89]); // A4
+    const { width, height } = page.getSize();
+    let y = height - margin;
+    // Title and meta
+    page.drawText(title, { x: margin, y: y - 18, size: 16, font: bold, color: rgb(0, 0, 0) });
+    y -= 26;
+    page.drawText(`Generated: ${new Date().toLocaleString()}`,
+      { x: margin, y: y - 12, size: 10, font, color: rgb(0.27, 0.27, 0.27) });
+    y -= 22;
+
+    // Header background
+    let x = margin;
+    const headerHeight = headerSize + rowPaddingY * 2;
+    columns.forEach((col) => {
+      page.drawRectangle({ x, y: y - headerHeight, width: col.width, height: headerHeight, color: rgb(0.92, 0.92, 0.96) });
+      x += col.width;
+    });
+    // Header text
+    x = margin;
+    columns.forEach((col) => {
+      page.drawText(col.label, { x: x + rowPaddingX, y: y - rowPaddingY - headerSize, size: headerSize, font: bold, color: rgb(0, 0, 0) });
+      x += col.width;
+    });
+    // Header bottom line
+    page.drawLine({ start: { x: margin, y: y - headerHeight }, end: { x: width - margin, y: y - headerHeight }, color: rgb(0.8, 0.8, 0.85) });
+    y -= headerHeight;
+    return { page, width, height, y };
+  };
+
+  function wrapText(text: string, maxWidth: number) {
+    if (!text) return [""];
+    const words = String(text).split(/\s+/);
+    const lines: string[] = [];
+    let line = "";
+    for (const w of words) {
+      const candidate = line ? line + " " + w : w;
+      if (font.widthOfTextAtSize(candidate, baseSize) <= maxWidth) {
+        line = candidate;
+        continue;
+      }
+      if (line) {
+        lines.push(line);
+        line = "";
+      }
+      // Break long word into multiple chunks that fit
+      let rest = w;
+      while (rest.length) {
+        let slice = "";
+        let i = 0;
+        while (i < rest.length) {
+          const next = slice + rest[i];
+          if (font.widthOfTextAtSize(next, baseSize) > maxWidth) break;
+          slice = next;
+          i++;
+        }
+        if (!slice) {
+          slice = rest[0];
+          i = 1;
+        }
+        lines.push(slice);
+        rest = rest.slice(i);
+      }
+    }
+    if (line) lines.push(line);
+    return lines;
+  }
+
+  const rowLineHeight = baseSize + lineGap; // per wrapped line
+  let { page, width, height, y } = addPage();
+
+  const safe = (v: any) => (v == null ? "" : String(v));
+  const getRowValues = (r: any) => ({
+    date: safe(r.date),
+    session: safe(r.session),
+    name: safe(r.name || r.full_name),
+    qty: safe(r.qty),
+    status: safe(r.status),
+    phone: safe(r.phone),
+  });
+
+  let rowIndex = 0;
+  for (const r of rows) {
+    const vals = getRowValues(r);
+    // Prepare wrapped lines per cell
+    const cellLines = columns.map((c) => wrapText(vals[c.key as keyof typeof vals] as string, c.width - rowPaddingX * 2));
+    const maxLines = Math.max(...cellLines.map((ls) => ls.length), 1);
+    const rowHeight = maxLines * rowLineHeight + rowPaddingY * 2;
+
+    // Page break if needed
+    if (y - rowHeight < margin) {
+      ({ page, width, height, y } = addPage());
+    }
+
+    // Row background (zebra)
+    if (rowIndex % 2 === 1) {
+      page.drawRectangle({ x: margin, y: y - rowHeight, width: innerWidth, height: rowHeight, color: rgb(0.98, 0.98, 0.995) });
+    }
+
+    // Cell borders and text
+    let x = margin;
+    for (let i = 0; i < columns.length; i++) {
+      const col = columns[i];
+      // Border
+      page.drawRectangle({ x, y: y - rowHeight, width: col.width, height: rowHeight, borderColor: rgb(0.85, 0.85, 0.9), borderWidth: 0.5, color: undefined });
+      // Text lines
+      let ty = y - rowPaddingY - baseSize;
+      const lines = cellLines[i];
+      for (const ln of lines) {
+        page.drawText(ln, { x: x + rowPaddingX, y: ty, size: baseSize, font, color: rgb(0.1, 0.1, 0.1) });
+        ty -= rowLineHeight;
+      }
+      x += col.width;
+    }
+
+    y -= rowHeight;
+    rowIndex++;
+  }
+
+  const bytes = await pdfDoc.save();
+  return Buffer.from(bytes);
+}
+
 export async function GET(req: Request) {
   if (!isAdminAuthed()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const url = new URL(req.url);
   const format = (url.searchParams.get("format") || "json").toLowerCase();
+  const dataset = (url.searchParams.get("dataset") || "").toLowerCase();
   const start = url.searchParams.get("start");
   const end = url.searchParams.get("end");
+  const date = url.searchParams.get("date");
+  const session = url.searchParams.get("session");
 
   let startISO: string | undefined;
   let endISO: string | undefined;
@@ -144,15 +460,69 @@ export async function GET(req: Request) {
   }
 
   const admin = getSupabaseAdminClient();
+
+  // Dedicated Annadanam dataset export (Bookings table with optional date/session filters)
+  if (dataset === "annadanam") {
+    // Try canonical table first
+    const rows: any[] = [];
+    const candidateTables = ["Bookings", "Annadanam-Bookings"];
+    for (const table of candidateTables) {
+      try {
+        let q = admin.from(table).select("*");
+        if (date) q = q.eq("date", date);
+        if (session && session.toLowerCase() !== "all") q = q.eq("session", session);
+        // still allow created_at range if present
+        if (startISO) q = q.gte("created_at", startISO);
+        if (endISO) q = q.lte("created_at", endISO);
+        const { data, error } = await q;
+        if (!error && Array.isArray(data)) {
+          rows.push(...data);
+          break; // use first existing table
+        }
+      } catch {}
+    }
+
+    const ts = new Date().toISOString().replace(/[:T]/g, "-").slice(0, 19);
+    const title = `Annadanam List${date ? ` — ${date}` : ""}${session && session.toLowerCase() !== "all" ? ` — ${session}` : ""}`;
+    if (format === "excel" || format === "xlsx") {
+      const dataByTable = { Annadanam: rows as unknown[] };
+      const buf = await toExcelWithImages(dataByTable);
+      return new Response(buf, {
+        headers: {
+          "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "Content-Disposition": `attachment; filename=annadanam-${ts}.xlsx`,
+          "Cache-Control": "no-store",
+        },
+      });
+    }
+    if (format === "pdf") {
+      try {
+        const buf = await toAnnadanamPDF(title, rows);
+        return new Response(buf, {
+          headers: {
+            "Content-Type": "application/pdf",
+            "Content-Disposition": `attachment; filename=annadanam-${ts}.pdf`,
+            "Cache-Control": "no-store",
+          },
+        });
+      } catch (e: any) {
+        return NextResponse.json({ error: e?.message || "PDF generation failed" }, { status: 500 });
+      }
+    }
+    // default JSON
+    return NextResponse.json(rows, {
+      headers: { "Content-Disposition": `attachment; filename=annadanam-${ts}.json` },
+    });
+  }
+
+  // Default multi-table export
   const tables = [
     "contact-us",
     "contact_us",
     "Profile-Table",
     "profile_photos",
   ];
-
   const dataByTable: Record<string, unknown[]> = {};
-
   for (const table of tables) {
     try {
       let query = admin.from(table).select("*");
@@ -160,16 +530,11 @@ export async function GET(req: Request) {
       if (endISO) query = query.lte("created_at", endISO);
       const { data, error } = await query;
       if (error) {
-        // Skip missing tables
         if ((error as any)?.details?.includes?.("does not exist")) continue;
         continue;
       }
-      if (Array.isArray(data) && data.length) {
-        dataByTable[table] = data;
-      }
-    } catch {
-      // ignore table errors
-    }
+      if (Array.isArray(data) && data.length) dataByTable[table] = data;
+    } catch {}
   }
 
   const ts = new Date().toISOString().replace(/[:T]/g, "-").slice(0, 19);
@@ -182,6 +547,20 @@ export async function GET(req: Request) {
         "Cache-Control": "no-store",
       },
     });
+  }
+  if (format === "pdf") {
+    try {
+      const buf = await toGenericPDF("Data Export", dataByTable);
+      return new Response(buf, {
+        headers: {
+          "Content-Type": "application/pdf",
+          "Content-Disposition": `attachment; filename=ayya-export-${ts}.pdf`,
+          "Cache-Control": "no-store",
+        },
+      });
+    } catch (e: any) {
+      return NextResponse.json({ error: e?.message || "PDF generation failed" }, { status: 500 });
+    }
   }
 
   // default JSON

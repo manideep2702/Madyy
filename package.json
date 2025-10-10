@@ -24,6 +24,7 @@
     "clsx": "^2.1.1",
     "exceljs": "^4.4.0",
     "framer-motion": "12.23.16",
+    "pdf-lib": "^1.17.1",
     "lucide-react": "^0.544.0",
     "next": "15.5.3",
     "nodemailer": "^6.10.1",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,59 +24,119 @@ export default function SignUpPage() {
   const [city, setCity] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [step, setStep] = useState<"form" | "otp">("form");
+  const [code, setCode] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
+  const [canResendAt, setCanResendAt] = useState<number>(0);
 
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setError(null);
+    setInfo(null);
     if (!fullName || !email || !password || !confirm) {
-      alert("Please fill full name, email, and password.");
+      setError("Please fill full name, email, and password.");
       return;
     }
     if (password !== confirm) {
-      alert("Passwords do not match.");
+      setError("Passwords do not match.");
       return;
     }
-    // If email already exists and is Google-only, advise to use Google
+    setLoading(true);
     try {
-      const r = await fetch(`/api/auth/check-email?email=${encodeURIComponent(email)}`);
-      if (r.ok) {
-        const j = await r.json();
-        if (j?.exists === true) {
-          const providers: string[] = Array.isArray(j.providers) ? j.providers : [];
-          const hasGoogle = providers.includes("google");
-          const hasEmail = providers.includes("email");
-          if (hasGoogle && !hasEmail) {
-            alert("An account with this email already exists via Google. Please sign in with Google.");
-            return;
-          }
-        }
+      const r = await fetch("/api/auth/register/init", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, full_name: fullName, phone, city }),
+      });
+      const j = await r.json();
+      if (!r.ok) {
+        setError(j?.error || "Failed to send verification code.");
+        return;
       }
-    } catch {}
-    const { getSupabaseBrowserClient } = await import("@/lib/supabase/client");
-    const supabase = getSupabaseBrowserClient();
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: fullName, phone, city },
-        emailRedirectTo: `${siteUrl}/auth/callback?next=${encodeURIComponent("/profile/edit")}`,
-      },
-    });
-    if (error) {
-      const already = /registered|exists/i.test(error.message) ? "\nIf this email is linked to Google, please sign in with Google." : "";
-      alert(error.message + already);
-      return;
+      setStep("otp");
+      setInfo("We sent a verification code to your email.");
+      setCanResendAt(Date.now() + 60_000);
+    } catch (e: any) {
+      setError(e?.message || "Unexpected error");
+    } finally {
+      setLoading(false);
     }
-    // If email confirmations are disabled, user is signed in immediately.
-    if (data.session) {
-      window.location.assign("/profile/edit");
-      return;
-    }
-    // Otherwise, instruct to confirm email and then sign in normally.
-    alert("Check your email to confirm your account. After confirming, sign in to continue.");
-    window.location.assign("/sign-in");
   }
+
+  async function onVerify(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setInfo(null);
+    if (!code || code.length < 4) {
+      setError("Enter the code we sent to your email.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const r = await fetch("/api/auth/register/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, code, password }),
+      });
+      const j = await r.json();
+      if (!r.ok) {
+        setError(j?.error || "Verification failed.");
+        return;
+      }
+      // Sign in the user now that account exists
+      const { getSupabaseBrowserClient } = await import("@/lib/supabase/client");
+      const supabase = getSupabaseBrowserClient();
+      const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
+      if (signInErr) {
+        // Fallback to sign-in page if something odd happens
+        window.location.assign("/sign-in");
+        return;
+      }
+      window.location.assign("/profile/edit");
+    } catch (e: any) {
+      setError(e?.message || "Unexpected error");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function onResend() {
+    if (Date.now() < canResendAt) return;
+    setError(null);
+    setInfo(null);
+    setLoading(true);
+    try {
+      const r = await fetch("/api/auth/register/init", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, full_name: fullName, phone, city }),
+      });
+      const j = await r.json();
+      if (!r.ok) {
+        setError(j?.error || "Failed to resend code.");
+        return;
+      }
+      setInfo("Code resent. Check your inbox.");
+      setCanResendAt(Date.now() + 60_000);
+    } catch (e: any) {
+      setError(e?.message || "Unexpected error");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const resendWait = Math.max(0, Math.ceil((canResendAt - Date.now()) / 1000));
+  useEffect(() => {
+    if (step !== "otp") return;
+    const t = setInterval(() => {
+      // force re-render every second for counter
+      setCanResendAt((v) => v);
+    }, 1000);
+    return () => clearInterval(t);
+  }, [step]);
 
   async function onGoogleSignUp() {
     const { getSupabaseBrowserClient } = await import("@/lib/supabase/client");
@@ -112,56 +172,71 @@ export default function SignUpPage() {
 
       {/* Signup form */}
       <section className="mx-auto w-full max-w-3xl px-6 pb-10">
-        <form
-          onSubmit={onSubmit}
-          className="animate-element rounded-2xl border border-border bg-card/70 p-6 shadow-sm"
-        >
-          <h2 className="text-xl md:text-2xl font-semibold">Create your account</h2>
-          <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
-            <Field label="Full Name" required>
-              <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Your full name" />
-            </Field>
-            <Field label="Email" required>
-              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
-            </Field>
-            <Field label="Password" required>
-              <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Create a password" />
-            </Field>
-            <Field label="Confirm Password" required>
-              <Input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="Re-enter password" />
-            </Field>
-            <Field label="Phone Number (optional)">
-              <Input inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+91" />
-            </Field>
-            <Field label="City">
-              <Input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Your city" />
-            </Field>
-          </div>
+        {step === "form" ? (
+          <form onSubmit={onSubmit} className="animate-element rounded-2xl border border-border bg-card/70 p-6 shadow-sm">
+            <h2 className="text-xl md:text-2xl font-semibold">Create your account</h2>
+            <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+              <Field label="Full Name" required>
+                <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Your full name" />
+              </Field>
+              <Field label="Email" required>
+                <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
+              </Field>
+              <Field label="Password" required>
+                <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Create a password" />
+              </Field>
+              <Field label="Confirm Password" required>
+                <Input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="Re-enter password" />
+              </Field>
+              <Field label="Phone Number (optional)">
+                <Input inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+91" />
+              </Field>
+              <Field label="City">
+                <Input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Your city" />
+              </Field>
+            </div>
 
-          {/* Preferences removed as requested */}
+            {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
+            {info ? <p className="mt-3 text-sm text-emerald-600">{info}</p> : null}
 
-          <p className="mt-4 text-xs text-muted-foreground">
-            Your details are safe with us — used only for Samithi communication.
-          </p>
+            <p className="mt-4 text-xs text-muted-foreground">Your details are safe with us — used only for Samithi communication.</p>
 
-          <div className="mt-6 flex justify-center">
-            <GradientButton className="min-w-[220px] text-[17px]">Sign Up</GradientButton>
-          </div>
+            <div className="mt-6 flex justify-center">
+              <GradientButton className="min-w-[220px] text-[17px]" disabled={loading}>{loading ? "Sending..." : "Send Code"}</GradientButton>
+            </div>
 
-          {/* Or continue with */}
-          <div className="mt-6 relative flex items-center justify-center">
-            <span className="w-full border-t border-border"></span>
-            <span className="absolute bg-background px-3 text-xs text-muted-foreground">Or continue with</span>
-          </div>
-          <button
-            type="button"
-            onClick={onGoogleSignUp}
-            className="mt-4 w-full inline-flex items-center justify-center gap-3 rounded-xl border border-border px-4 py-3 text-sm hover:bg-secondary"
-          >
-            <GoogleIcon />
-            Continue with Google
-          </button>
-        </form>
+            <div className="mt-6 relative flex items-center justify-center">
+              <span className="w-full border-t border-border"></span>
+              <span className="absolute bg-background px-3 text-xs text-muted-foreground">Or continue with</span>
+            </div>
+            <button
+              type="button"
+              onClick={onGoogleSignUp}
+              className="mt-4 w-full inline-flex items-center justify-center gap-3 rounded-xl border border-border px-4 py-3 text-sm hover:bg-secondary"
+            >
+              <GoogleIcon />
+              Continue with Google
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={onVerify} className="animate-element rounded-2xl border border-border bg-card/70 p-6 shadow-sm">
+            <h2 className="text-xl md:text-2xl font-semibold">Verify your email</h2>
+            <p className="mt-2 text-sm text-muted-foreground">We sent a code to {email}. Enter it below to create your account.</p>
+            <div className="mt-5 grid grid-cols-1 gap-4">
+              <Field label="Verification Code" required>
+                <Input inputMode="numeric" value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} placeholder="6-digit code" />
+              </Field>
+            </div>
+            {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
+            {info ? <p className="mt-3 text-sm text-emerald-600">{info}</p> : null}
+            <div className="mt-6 flex items-center justify-between">
+              <button type="button" onClick={onResend} disabled={loading || resendWait > 0} className="text-sm underline underline-offset-4 disabled:opacity-50">
+                {resendWait > 0 ? `Resend in ${resendWait}s` : "Resend code"}
+              </button>
+              <GradientButton className="min-w-[160px]" disabled={loading}>{loading ? "Verifying..." : "Verify & Create"}</GradientButton>
+            </div>
+          </form>
+        )}
       </section>
 
       {/* Community benefits */}

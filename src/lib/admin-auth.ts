@@ -4,7 +4,7 @@ import crypto from "crypto";
 export const ADMIN_COOKIE = "ayya_admin_auth";
 
 function getEnvAdminCreds() {
-  const email = process.env.ADMIN_EMAIL || "Adminssss@ayyappa.com";
+  const email = (process.env.ADMIN_EMAIL || "Adminssss@ayyappa.com").trim().toLowerCase();
   const password = process.env.ADMIN_PASSWORD || "Ayyappa@123";
   return { email, password };
 }
@@ -27,7 +27,8 @@ export function makeSessionToken(email: string, password: string) {
 
 export function validateAdminLogin(email: string, password: string) {
   const { email: e, password: p } = getEnvAdminCreds();
-  return email === e && password === p;
+  const incomingEmail = (email || "").trim().toLowerCase();
+  return incomingEmail === e && password === p;
 }
 
 export function setAdminCookie() {
@@ -60,4 +61,3 @@ export function isAdminAuthed() {
   const expected = makeSessionToken(email, password);
   return crypto.timingSafeEqual(Buffer.from(val), Buffer.from(expected));
 }
-
