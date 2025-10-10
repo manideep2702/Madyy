@@ -1,0 +1,14 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "20.19.5"
+  LIGHTNINGCSS_IGNORE_NATIVE = "1"
+  LIGHTNINGCSS_WASM = "1"
+  # Avoid noisy npm output in CI
+  NPM_FLAGS = "--no-audit --fund=false"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
