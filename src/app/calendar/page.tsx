@@ -17,7 +17,7 @@ export default function CalendarPage() {
           </p>
           <div className="flex flex-wrap items-center justify-center gap-6">
             <GradientButton onClick={() => router.push("/calendar/temple")}>
-              Samithi Calendar
+              Ayyappa Temple Calander
             </GradientButton>
             <GradientButton variant="variant" onClick={() => router.push("/calendar/annadanam")}>
               Annadanam Calendar

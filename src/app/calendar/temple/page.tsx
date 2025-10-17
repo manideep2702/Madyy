@@ -72,7 +72,7 @@ export default function Page() {
   return (
     <RequireAuth>
       <div className="mx-auto max-w-5xl p-6 md:p-10 pt-24 md:pt-28">
-        <h1 className="text-2xl md:text-3xl font-semibold mb-2">Samithi Calendar</h1>
+        <h1 className="text-2xl md:text-3xl font-semibold mb-2">Ayyappa Temple Calander</h1>
         <p className="text-sm text-muted-foreground">
           Extracted from the official schedule image. Typical darshan hours are 5:00 AM to 10:00 PM;
           peak festival days may extend. Please verify with the Samithi.
