@@ -6,8 +6,8 @@ export default function Page() {
   const start = "November 5th";
   const end = "January 7th";
   const slots = [
-    { session: "Afternoon", time: "12:45–1:30 pm, 1:30–2:00 pm, 2:00–2:30 pm, 2:30–3:00 pm" },
-    { session: "Evening", time: "8:00–8:30 pm, 8:30–9:00 pm, 9:00–9:30 pm, 9:30–10:00 pm" },
+    { session: "Afternoon", time: "1:00 PM – 3:00 PM" },
+    { session: "Evening", time: "8:00 PM – 10:00 PM" },
   ];
 
   return (

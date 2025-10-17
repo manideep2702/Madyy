@@ -146,7 +146,7 @@ BEGIN
     ON c.date = s.date AND c.session = s.session
   WHERE s.date = d
     AND s.session IN (
-      '12:45 PM - 1:30 PM',
+      '1:00 PM - 1:30 PM',
       '1:30 PM - 2:00 PM',
       '2:00 PM - 2:30 PM',
       '2:30 PM - 3:00 PM',
@@ -156,7 +156,7 @@ BEGIN
       '9:30 PM - 10:00 PM'
     )
   ORDER BY CASE s.session
-    WHEN '12:45 PM - 1:30 PM' THEN 1
+    WHEN '1:00 PM - 1:30 PM' THEN 1
     WHEN '1:30 PM - 2:00 PM' THEN 2
     WHEN '2:00 PM - 2:30 PM' THEN 3
     WHEN '2:30 PM - 3:00 PM' THEN 4
@@ -201,7 +201,7 @@ BEGIN
     RAISE EXCEPTION 'Email required';
   END IF;
   -- Resolve fixed session times
-  IF s = '12:45 PM - 1:30 PM' THEN start_local := time '12:45'; end_local := time '13:30';
+  IF s = '1:00 PM - 1:30 PM' THEN start_local := time '13:00'; end_local := time '13:30';
   ELSIF s = '1:30 PM - 2:00 PM' THEN start_local := time '13:30'; end_local := time '14:00';
   ELSIF s = '2:00 PM - 2:30 PM' THEN start_local := time '14:00'; end_local := time '14:30';
   ELSIF s = '2:30 PM - 3:00 PM' THEN start_local := time '14:30'; end_local := time '15:00';
@@ -237,23 +237,23 @@ BEGIN
   END IF;
   -- Determine session group and enforce per-day group cap (Afternoon 150, Evening 150)
   is_afternoon := s = ANY (ARRAY[
-    '12:45 PM - 1:30 PM',
+    '1:00 PM - 1:30 PM',
     '1:30 PM - 2:00 PM',
     '2:00 PM - 2:30 PM',
     '2:30 PM - 3:00 PM'
   ]);
   -- Lock all slots for this group to serialize concurrent reservations across batches
   PERFORM 1 FROM public."Slots"
-    WHERE date = d AND session = ANY (
-      CASE WHEN is_afternoon THEN ARRAY['12:45 PM - 1:30 PM','1:30 PM - 2:00 PM','2:00 PM - 2:30 PM','2:30 PM - 3:00 PM']
-           ELSE ARRAY['8:00 PM - 8:30 PM','8:30 PM - 9:00 PM','9:00 PM - 9:30 PM','9:30 PM - 10:00 PM'] END
-    )
-    FOR UPDATE;
+      WHERE date = d AND session = ANY (
+        CASE WHEN is_afternoon THEN ARRAY['1:00 PM - 1:30 PM','1:30 PM - 2:00 PM','2:00 PM - 2:30 PM','2:30 PM - 3:00 PM']
+             ELSE ARRAY['8:00 PM - 8:30 PM','8:30 PM - 9:00 PM','9:00 PM - 9:30 PM','9:30 PM - 10:00 PM'] END
+      )
+      FOR UPDATE;
   SELECT COALESCE(SUM(CASE WHEN b.status = 'confirmed' THEN b.qty ELSE 0 END), 0)
     INTO group_total
     FROM public."Bookings" AS b
     WHERE b.date = d AND b.session = ANY (
-      CASE WHEN is_afternoon THEN ARRAY['12:45 PM - 1:30 PM','1:30 PM - 2:00 PM','2:00 PM - 2:30 PM','2:30 PM - 3:00 PM']
+      CASE WHEN is_afternoon THEN ARRAY['1:00 PM - 1:30 PM','1:30 PM - 2:00 PM','2:00 PM - 2:30 PM','2:30 PM - 3:00 PM']
            ELSE ARRAY['8:00 PM - 8:30 PM','8:30 PM - 9:00 PM','9:00 PM - 9:30 PM','9:30 PM - 10:00 PM'] END
     );
   IF group_total + qty > 150 THEN
@@ -278,7 +278,7 @@ BEGIN
     UPDATE public."Slots"
       SET status = 'closed'
       WHERE date = d AND session = ANY (
-        CASE WHEN is_afternoon THEN ARRAY['12:45 PM - 1:30 PM','1:30 PM - 2:00 PM','2:00 PM - 2:30 PM','2:30 PM - 3:00 PM']
+        CASE WHEN is_afternoon THEN ARRAY['1:00 PM - 1:30 PM','1:30 PM - 2:00 PM','2:00 PM - 2:30 PM','2:30 PM - 3:00 PM']
              ELSE ARRAY['8:00 PM - 8:30 PM','8:30 PM - 9:00 PM','9:00 PM - 9:30 PM','9:30 PM - 10:00 PM'] END
       );
   END IF;
@@ -301,7 +301,7 @@ DECLARE
 BEGIN
   WHILE v_date <= DATE '2026-01-07' LOOP
     -- Afternoon sessions
-    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (v_date, '12:45 PM - 1:30 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
+    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (v_date, '1:00 PM - 1:30 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
     INSERT INTO public."Slots" (date, session, capacity, status) VALUES (v_date, '1:30 PM - 2:00 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
     INSERT INTO public."Slots" (date, session, capacity, status) VALUES (v_date, '2:00 PM - 2:30 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
     INSERT INTO public."Slots" (date, session, capacity, status) VALUES (v_date, '2:30 PM - 3:00 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
@@ -317,7 +317,7 @@ BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM public."Slots" WHERE date = DATE '2025-10-10'
   ) THEN
-    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-10', '12:45 PM - 1:30 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
+    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-10', '1:00 PM - 1:30 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
     INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-10', '1:30 PM - 2:00 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
     INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-10', '2:00 PM - 2:30 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
     INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-10', '2:30 PM - 3:00 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
@@ -330,7 +330,7 @@ BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM public."Slots" WHERE date = DATE '2025-10-17'
   ) THEN
-    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-17', '12:45 PM - 1:30 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
+    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-17', '1:00 PM - 1:30 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
     INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-17', '1:30 PM - 2:00 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
     INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-17', '2:00 PM - 2:30 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
     INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-17', '2:30 PM - 3:00 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
@@ -344,7 +344,7 @@ BEGIN
     SET capacity = 40
     WHERE (date BETWEEN DATE '2025-11-05' AND DATE '2026-01-07' OR date = DATE '2025-10-10' OR date = DATE '2025-10-17')
       AND session IN (
-        '12:45 PM - 1:30 PM','1:30 PM - 2:00 PM','2:00 PM - 2:30 PM','2:30 PM - 3:00 PM',
+        '1:00 PM - 1:30 PM','1:30 PM - 2:00 PM','2:00 PM - 2:30 PM','2:30 PM - 3:00 PM',
         '8:00 PM - 8:30 PM','8:30 PM - 9:00 PM','9:00 PM - 9:30 PM','9:30 PM - 10:00 PM'
       );
 END $$;

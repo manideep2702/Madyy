@@ -93,7 +93,7 @@ function useSupabase() {
 
 // Fixed session definitions
 const AFTERNOON_SLOTS: { label: string; start: string; end: string }[] = [
-  { label: "12:45 PM - 1:30 PM", start: "12:45", end: "13:30" },
+  { label: "1:00 PM - 1:30 PM", start: "13:00", end: "13:30" },
   { label: "1:30 PM - 2:00 PM", start: "13:30", end: "14:00" },
   { label: "2:00 PM - 2:30 PM", start: "14:00", end: "14:30" },
   { label: "2:30 PM - 3:00 PM", start: "14:30", end: "15:00" },
