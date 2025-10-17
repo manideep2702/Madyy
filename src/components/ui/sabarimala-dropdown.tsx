@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { ChevronDown } from "lucide-react";
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -10,15 +11,19 @@ type Option = { label: string; onClick: () => void; Icon?: React.ReactNode };
 type DropdownMenuProps = {
   options: Option[];
   children?: React.ReactNode;
+  className?: string; // allow host to control trigger styles for integration
 };
 
-export default function SabarimalaDropdown({ options, children }: DropdownMenuProps) {
+export default function SabarimalaDropdown({ options, children, className }: DropdownMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <div className="relative inline-block">
       <Button
         onClick={() => setIsOpen((v) => !v)}
-        className="h-8 rounded-full bg-white/15 px-4 text-xs font-medium text-white hover:bg-white/25"
+        className={cn(
+          "h-8 rounded-full bg-white/15 px-4 text-xs font-medium text-white hover:bg-white/25",
+          className
+        )}
       >
         <motion.span whileHover={{ scale: 1.05 }} className="inline-flex items-center gap-2">
           {children ?? "Sabarimala"}

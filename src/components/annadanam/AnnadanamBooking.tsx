@@ -37,14 +37,39 @@ export interface Booking {
   status: "confirmed" | "cancelled";
 }
 
-const SEASON_START = new Date("2025-11-05");
-const SEASON_END = new Date("2026-01-07");
-const EXTRA_DATES = new Set<string>(["2025-10-10"]);
-const EXTRA_MIN_DATE = new Date("2025-10-10");
+function seasonForNow(now = new Date()) {
+  const y = now.getFullYear();
+  const m = now.getMonth() + 1;
+  const d = now.getDate();
+  // If between Nov 5 and Jan 7 (spanning years), return that window.
+  const nov5 = new Date(y, 10, 5);
+  const jan7Next = new Date(y + 1, 0, 7);
+  const jan7 = new Date(y, 0, 7);
+  if (m === 11 || m === 12 || (m === 1 && d <= 7)) {
+    // Current season: Nov 5 (this year) to Jan 7 (next year) or Jan 7 of current year if Jan
+    const start = new Date(y, 10, 5);
+    const end = new Date(y + (m === 1 ? 0 : 1), 0, 7);
+    return { start, end };
+  }
+  // Before Nov 5: upcoming season this year → next year's Jan 7
+  if (now < nov5) {
+    return { start: nov5, end: jan7Next };
+  }
+  // After Jan 7 and before Nov 5: upcoming season is this year's Nov 5 → next Jan 7
+  return { start: nov5, end: jan7Next };
+}
 
-function inSeason(date: Date): boolean {
+// Extra one-off booking dates allowed outside regular season
+const EXTRA_DATES: string[] = [
+  "2025-10-10",
+  "2025-10-17",
+];
+
+function inSeason(date: Date, now = new Date()): boolean {
+  const { start, end } = seasonForNow(now);
+  if (date >= start && date <= end) return true;
   const iso = formatDate(date);
-  return (date >= SEASON_START && date <= SEASON_END) || EXTRA_DATES.has(iso);
+  return EXTRA_DATES.includes(iso);
 }
 
 function formatDate(date: Date): string {
@@ -282,7 +307,10 @@ function BookingDialog({ open, onClose, slot, onConfirm }: {
 }
 
 export default function AnnadanamBooking() {
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const now = new Date();
+  const { start: SEASON_START, end: SEASON_END } = seasonForNow(now);
+  const initialDate = now < SEASON_START ? SEASON_START : (now > SEASON_END ? SEASON_START : now);
+  const [selectedDate, setSelectedDate] = useState<Date>(initialDate);
   const [slots, setSlots] = useState<Slot[]>([]);
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -293,6 +321,35 @@ export default function AnnadanamBooking() {
   const { show } = useAlert();
 
   const selectedDateKey = useMemo(() => formatDate(selectedDate), [selectedDate]);
+
+  // Expand calendar navigation range to include extra special dates
+  const CAL_START = useMemo(() => {
+    if (EXTRA_DATES.length === 0) return SEASON_START;
+    const minExtra = new Date(EXTRA_DATES.slice().sort()[0]);
+    return minExtra < SEASON_START ? minExtra : SEASON_START;
+  }, [SEASON_START]);
+  const CAL_END = useMemo(() => {
+    if (EXTRA_DATES.length === 0) return SEASON_END;
+    const maxExtra = new Date(EXTRA_DATES.slice().sort().reverse()[0]);
+    return maxExtra > SEASON_END ? maxExtra : SEASON_END;
+  }, [SEASON_END]);
+
+  // Pick date from query param if provided and valid
+  useEffect(() => {
+    try {
+      const url = new URL(window.location.href);
+      const qp = url.searchParams.get('date');
+      if (!qp) return;
+      // Expect YYYY-MM-DD
+      const parts = qp.split('-');
+      if (parts.length !== 3) return;
+      const yyyy = parseInt(parts[0], 10), mm = parseInt(parts[1], 10), dd = parseInt(parts[2], 10);
+      if (!yyyy || !mm || !dd) return;
+      const dt = new Date(yyyy, mm - 1, dd);
+      if (Number.isNaN(dt.getTime())) return;
+      if (inSeason(dt, now)) setSelectedDate(dt);
+    } catch {}
+  }, []);
 
   async function fetchSlots(dateIso: string) {
     setLoading(true);
@@ -406,6 +463,10 @@ export default function AnnadanamBooking() {
       const user = userRes?.user;
       if (!user) {
         show({ title: "Sign in required", description: "Please sign in to book.", variant: "warning" });
+        try {
+          const next = `${window.location.pathname}${window.location.search}`;
+          window.location.assign(`/sign-in?next=${encodeURIComponent(next)}`);
+        } catch {}
         return;
       }
       // Prefer RPC if available
@@ -472,11 +533,11 @@ export default function AnnadanamBooking() {
             <CardContent className="p-4">
               <Calendar
                 selected={selectedDate}
-                onSelect={(date) => date && inSeason(date) && setSelectedDate(date)}
-                disabled={(date) => !inSeason(date)}
+                onSelect={(date) => date && inSeason(date, now) && setSelectedDate(date)}
+                disabled={(date) => !inSeason(date, now)}
                 className="rounded-lg border-0"
-                fromDate={new Date(Math.min(SEASON_START.getTime(), EXTRA_MIN_DATE.getTime()))}
-                toDate={SEASON_END}
+                fromDate={CAL_START}
+                toDate={CAL_END}
               />
             </CardContent>
           </Card>

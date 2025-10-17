@@ -66,7 +66,7 @@ export const SignInPage: React.FC<SignInPageProps> = ({
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <div className="h-[100dvh] flex flex-col md:flex-row font-geist w-[100dvw] bg-background">
+    <div className="min-h-[100dvh] flex flex-col md:flex-row font-geist w-[100dvw] bg-background pb-24 sm:pb-20 [padding-bottom:env(safe-area-inset-bottom)]">
       {/* Left column: sign-in form */}
       <section className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
@@ -140,4 +140,3 @@ export const SignInPage: React.FC<SignInPageProps> = ({
     </div>
   );
 };
-

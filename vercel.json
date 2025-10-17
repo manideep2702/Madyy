@@ -1,0 +1,14 @@
+{
+  "crons": [
+    {
+      "path": "/api/annadanam/digest?window=afternoon",
+      "schedule": "57 12 * * *",
+      "tz": "Asia/Kolkata"
+    },
+    {
+      "path": "/api/annadanam/digest?window=evening",
+      "schedule": "0 20 * * *",
+      "tz": "Asia/Kolkata"
+    }
+  ]
+}

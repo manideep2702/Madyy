@@ -90,6 +90,22 @@ function AyyappaPrayer() {
 }
 
 function UpcomingEvents() {
+  function getSeason(now: Date) {
+    const y = now.getFullYear();
+    const m = now.getMonth() + 1;
+    if (m < 11) return { start: new Date(y, 10, 5), end: new Date(y + 1, 0, 7) };
+    if (m === 11 || m === 12) return { start: new Date(y, 10, 5), end: new Date(y + 1, 0, 7) };
+    if (now.getDate() <= 7) return { start: new Date(y - 1, 10, 5), end: new Date(y, 0, 7) };
+    return { start: new Date(y, 10, 5), end: new Date(y + 1, 0, 7) };
+  }
+  function getNextAnnadanamDate(now = new Date()) {
+    const { start, end } = getSeason(now);
+    if (now < start) return start;
+    if (now <= end) return now;
+    return new Date(now.getFullYear(), 10, 5);
+  }
+  const nextDate = getNextAnnadanamDate();
+  const nextDateLabel = nextDate.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
   const rows = [
     { session: "Morning", time: "12:30 to 2:30 pm" },
     { session: "Evening", time: "8:30 to 10:00 pm" },
@@ -98,6 +114,7 @@ function UpcomingEvents() {
     <FrameCard title="Annadanam Sessions">
       <div className="text-center">
         <p className="text-sm text-neutral-700">Daily seva slots during Annadanam season</p>
+        <p className="mt-1 text-xs text-neutral-600">Next date: <span className="font-medium text-indigo-900">{nextDateLabel}</span></p>
 
         <div className="mt-5 mx-auto w-full max-w-md overflow-hidden rounded-xl border border-amber-200">
           <table className="w-full text-sm">
@@ -123,7 +140,7 @@ function UpcomingEvents() {
             href="/calendar/annadanam"
             className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-xs ring-1 ring-amber-300 text-indigo-900 hover:bg-amber-50"
           >
-            Annadanam Calendar
+            Slot Booking
           </a>
           <a
             href="/volunteer"

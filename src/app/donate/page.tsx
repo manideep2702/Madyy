@@ -24,7 +24,7 @@ export default function DonatePage() {
 
   const requirePan = finalAmount >= 1999; // PAN card upload required for ₹1999 and above
 
-  function proceed() {
+  async function proceed() {
     if (!finalAmount || finalAmount < 1) {
       alert("Please enter a valid amount.");
       return;
@@ -41,7 +41,32 @@ export default function DonatePage() {
       alert("PAN file is too large. Maximum allowed size is 5MB.");
       return;
     }
-    alert(`Thank you! Proceeding with donation of ₹${finalAmount}.`);
+    try {
+      const hasSupabaseEnv = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+      if (!hasSupabaseEnv) {
+        // If auth is not configured, still ask to sign in per requirement
+        const next = `/donate?amount=${finalAmount}`;
+        window.location.assign(`/sign-in?next=${encodeURIComponent(next)}`);
+        return;
+      }
+      const { getSupabaseBrowserClient } = await import("@/lib/supabase/client");
+      const supabase = getSupabaseBrowserClient();
+      const { data: userRes } = await supabase.auth.getUser();
+      const user = userRes?.user;
+      if (!user) {
+        const params = new URLSearchParams();
+        params.set("amount", String(finalAmount));
+        const next = `/donate?${params.toString()}`;
+        window.location.assign(`/sign-in?next=${encodeURIComponent(next)}`);
+        return;
+      }
+      alert(`Thank you, ${name}! Proceeding with donation of ₹${finalAmount}.`);
+      // TODO: integrate payment gateway here
+    } catch {
+      // Fallback: ask sign-in
+      const next = `/donate?amount=${finalAmount}`;
+      window.location.assign(`/sign-in?next=${encodeURIComponent(next)}`);
+    }
   }
 
   return (
@@ -158,6 +183,11 @@ export default function DonatePage() {
           <div className="mt-3 space-y-1 text-xs text-muted-foreground">
             <p>Receipts will be GST-compliant and emailed within 3–7 working days.</p>
             <p>PAN card (image or PDF) is required for donations of ₹1999 and above. Max file size 5MB.</p>
+          </div>
+          <div className="mt-6 flex justify-center">
+            <GradientButton onClick={proceed}>
+              Proceed to Donate
+            </GradientButton>
           </div>
         </div>
       </section>

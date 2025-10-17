@@ -23,8 +23,8 @@ type VolunteerEntry = {
 export default function VolunteerPage() {
   const season = { start: "November 5th", end: "January 7th" };
   const sessions = [
-    { name: "Morning" as const, time: "12:30 – 2:30 pm" },
-    { name: "Evening" as const, time: "8:30 – 10:00 pm" },
+    { name: "Morning" as const, time: "12:00 AM – 3:00 PM" },
+    { name: "Evening" as const, time: "7:30 PM – 9:00 PM" },
   ];
 
   // Form state
@@ -38,31 +38,71 @@ export default function VolunteerPage() {
   const [list] = useState<VolunteerEntry[]>([]);
   const [savedId, setSavedId] = useState<string | null>(null);
 
-  const submit = () => {
+  const submit = async () => {
     if (!name || !email || !phone || !date || !session) {
       alert("Please fill Name, Email, Phone, Date, and Session.");
       return;
     }
-    const entry: VolunteerEntry = {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      name,
-      email,
-      phone,
-      date,
-      session,
-      role,
-      note: note.trim() || undefined,
-      timestamp: new Date().toISOString(),
-    };
-    setSavedId(entry.id);
-    // lightweight reset
-    setDate("");
-    setSession("Morning");
-    setNote("");
-    alert("Thank you! Your volunteer interest is noted.");
+    let user_id: string | undefined;
+    try {
+      const hasEnv = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+      if (hasEnv) {
+        const { getSupabaseBrowserClient } = await import("@/lib/supabase/client");
+        const supabase = getSupabaseBrowserClient();
+        const { data: userRes } = await supabase.auth.getUser();
+        user_id = userRes?.user?.id;
+      }
+    } catch {}
+    try {
+      const res = await fetch('/api/volunteer/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, phone, date, session, role, note, user_id }),
+      });
+      const j = await res.json().catch(() => ({} as any));
+      if (!res.ok) {
+        const msg = j?.error || 'Failed to save volunteer booking';
+        alert(msg);
+        return;
+      }
+      setSavedId(String(j?.booking?.id ?? ''));
+      alert('Thank you! Your volunteer interest is noted.');
+      // lightweight reset
+      setDate("");
+      setSession("Morning");
+      setNote("");
+    } catch (e: any) {
+      alert(e?.message || 'Network error');
+    }
   };
 
   const recent = useMemo(() => list.slice(-5).reverse(), [list]);
+  function seasonForNow(now = new Date()) {
+    const y = now.getFullYear();
+    const m = now.getMonth() + 1;
+    const d = now.getDate();
+    const nov5 = new Date(y, 10, 5);
+    const jan7Next = new Date(y + 1, 0, 7);
+    if (m === 11 || m === 12 || (m === 1 && d <= 7)) {
+      return { start: new Date(y, 10, 5), end: new Date(y + (m === 1 ? 0 : 1), 0, 7) };
+    }
+    if (now < nov5) return { start: nov5, end: jan7Next };
+    return { start: nov5, end: jan7Next };
+  }
+  const { start: seasonStart, end: seasonEnd } = useMemo(() => seasonForNow(new Date()), []);
+  const seasonStartIso = useMemo(() => {
+    const y = seasonStart.getFullYear();
+    const m = String(seasonStart.getMonth() + 1).padStart(2, "0");
+    const d = String(seasonStart.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }, [seasonStart]);
+  const seasonEndIso = useMemo(() => {
+    const y = seasonEnd.getFullYear();
+    const m = String(seasonEnd.getMonth() + 1).padStart(2, "0");
+    const d = String(seasonEnd.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }, [seasonEnd]);
+  const isOutOfSeason = useMemo(() => !!date && (date < seasonStartIso || date > seasonEndIso), [date, seasonStartIso, seasonEndIso]);
 
   return (
     <RequireAuth>
@@ -129,7 +169,19 @@ export default function VolunteerPage() {
               </div>
               <div className="grid gap-1.5">
                 <Label htmlFor="v-date">Preferred Date</Label>
-                <Input id="v-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+                <Input
+                  id="v-date"
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  min={seasonStartIso}
+                  max={seasonEndIso}
+                  aria-invalid={isOutOfSeason}
+                  className={isOutOfSeason ? "ring-red-500 focus:ring-red-500" : undefined}
+                />
+                {isOutOfSeason && (
+                  <span className="text-xs text-red-500">❌ Choose a date between {seasonStartIso} and {seasonEndIso}.</span>
+                )}
               </div>
 
               <div className="grid gap-1.5">

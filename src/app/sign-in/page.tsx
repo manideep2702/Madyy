@@ -74,6 +74,8 @@ export default function Page() {
     try {
       const user = data.user;
       if (user) {
+        const params = new URLSearchParams(window.location.search);
+        const nextParam = params.get("next");
         const fullName = (user.user_metadata?.full_name || user.user_metadata?.name || "").toString();
         const payloadOptions = [
           { user_id: user.id, email: user.email ?? email, name: fullName, full_name: fullName },
@@ -102,7 +104,13 @@ export default function Page() {
         // New vs existing: if a profile row exists, treat as existing
         const needsCompletion = !row;
         show({ title: "Welcome", description: `${displayName}`, variant: "success" });
-        window.location.assign(needsCompletion ? "/profile/edit" : "/");
+        if (needsCompletion) {
+          window.location.assign("/profile/edit");
+        } else if (nextParam) {
+          window.location.assign(nextParam);
+        } else {
+          window.location.assign("/");
+        }
         return;
       }
     } catch {}

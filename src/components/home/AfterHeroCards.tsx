@@ -79,6 +79,23 @@ function PrayerCard() {
 }
 
 function AnnadanamCard() {
+  function getSeason(now: Date) {
+    const y = now.getFullYear();
+    const m = now.getMonth() + 1; // 1-12
+    if (m < 11) return { start: new Date(y, 10, 5), end: new Date(y + 1, 0, 7) }; // Nov 5 to Jan 7 (next year)
+    if (m === 11 || m === 12) return { start: new Date(y, 10, 5), end: new Date(y + 1, 0, 7) };
+    // m === 1
+    if (now.getDate() <= 7) return { start: new Date(y - 1, 10, 5), end: new Date(y, 0, 7) };
+    return { start: new Date(y, 10, 5), end: new Date(y + 1, 0, 7) };
+  }
+  function getNextAnnadanamDate(now = new Date()) {
+    const { start, end } = getSeason(now);
+    if (now < start) return start;
+    if (now <= end) return now;
+    return new Date(now.getFullYear(), 10, 5); // next season start (Nov 5)
+  }
+  const nextDate = getNextAnnadanamDate();
+  const nextDateLabel = nextDate.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
   const rows = [
     { session: "Morning", time: "12:30 – 2:30 pm" },
     { session: "Evening", time: "8:30 – 10:00 pm" },
@@ -87,6 +104,7 @@ function AnnadanamCard() {
     <div className="w-full h-full bg-white p-6">
       <h3 className="text-center text-sm font-semibold tracking-widest text-amber-700">UPCOMING ANNADANAM</h3>
       <p className="mt-3 text-sm text-neutral-700 text-center">Daily seva slots during Annadanam season</p>
+      <p className="mt-1 text-xs text-neutral-600 text-center">Next date: <span className="font-medium text-indigo-900">{nextDateLabel}</span></p>
       <div className="mt-4 mx-auto w-full max-w-md overflow-hidden rounded-lg border border-amber-200">
         <table className="w-full text-sm">
           <thead className="bg-amber-50/70">
@@ -107,7 +125,7 @@ function AnnadanamCard() {
       </div>
       <div className="mt-5 flex items-center justify-center gap-3">
         <a href="/calendar/annadanam" className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-xs ring-1 ring-amber-300 text-indigo-900 hover:bg-amber-50">
-          View Calendar
+          Slot Booking
         </a>
         <a href="/volunteer" className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-xs ring-1 ring-amber-300 text-indigo-900 hover:bg-amber-50">
           Volunteer
