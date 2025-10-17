@@ -24,6 +24,15 @@ export default function SiteNavbar() {
   return (
     <div className="w-full px-4 py-2">
       <div className="mx-auto max-w-7xl relative flex items-center justify-center">
+        {/* Brand (logo + name) pinned to the left */}
+        <a
+          href="/"
+          className="absolute left-0 top-1/2 -translate-y-1/2 inline-flex items-center gap-2"
+          aria-label="Sree Sabari Sastha Seva Samithi Home"
+        >
+          <img src="/logo.jpeg" alt="Sree Sabari Sastha Seva Samithi" className="h-8 w-8 rounded-full object-cover ring-1 ring-white/10" />
+          <span className="hidden sm:inline text-sm font-semibold text-foreground">Sree Sabari Sastha Seva Samithi</span>
+        </a>
         {/* Nav pill */}
         <NavBar
           items={items}

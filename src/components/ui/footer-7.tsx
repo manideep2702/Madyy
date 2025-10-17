@@ -31,7 +31,7 @@ const defaultSections = [
     links: [
       { name: "Home", href: "/" },
       { name: "Calendar", href: "/calendar" },
-      { name: "Samithi Calendar", href: "/calendar/temple" },
+      { name: "Ayyappa Temple Calander", href: "/calendar/temple" },
       { name: "Annadanam Calendar", href: "/calendar/annadanam" },
     ],
   },
@@ -39,7 +39,6 @@ const defaultSections = [
     title: "Devotional",
     links: [
       { name: "Devotional Book (Flipbook)", href: "/devotional" },
-      { name: "Official Website", href: "https://ayyappatemple.in" },
     ],
   },
   {
