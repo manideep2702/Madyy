@@ -1,6 +1,5 @@
 import React from "react";
 import { FaFacebook, FaInstagram, FaLinkedin, FaTwitter } from "react-icons/fa";
-import ThemeToggle from "@/components/ui/theme-toggle";
 
 interface Footer7Props {
   logo?: {
@@ -136,9 +135,7 @@ export const Footer7 = ({
               </li>
             ))}
           </ul>
-          <div className="order-1 md:order-3">
-            <ThemeToggle />
-          </div>
+          <div className="order-1 md:order-3" />
         </div>
       </div>
     </section>

@@ -37,7 +37,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <body className={`${geistSans.variable} ${geistMono.variable} ${notoSerif.className} antialiased`}>
         <Providers>
           <header className="absolute top-2 md:top-3 left-0 right-0 z-50 w-full bg-transparent">
