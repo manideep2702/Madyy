@@ -145,7 +145,7 @@ function SabarimalaContent() {
                       <li>First five days of each Malayalam month</li>
                     </ul>
                     <p className="mt-3">
-                      See current year dates in our <a href="/calendar/temple" className="underline underline-offset-2">Samithi Calendar</a>.
+                      See current year dates in our <a href="/calendar/temple" className="underline underline-offset-2">Ayyappa Temple Calander</a>.
                     </p>
                   </div>
                   <div className="space-y-4 text-left p-5 md:p-6 md:pl-8">

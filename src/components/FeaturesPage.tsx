@@ -59,9 +59,9 @@ export default function FeaturesPage() {
         </header>
 
         <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Samithi Calendar Integration */}
+          {/* Ayyappa Temple Calander Integration */}
           <div className="group rounded-2xl bg-white border border-[#0F172A]/10 shadow-sm hover:shadow-md transition p-5">
-            <CardHeader icon={<CalendarDays className="h-6 w-6" />} title="Samithi Calendar" />
+            <CardHeader icon={<CalendarDays className="h-6 w-6" />} title="Ayyappa Temple Calander" />
             <div className="mt-3 flex gap-2">
               <select
                 className="flex-1 rounded-lg border border-[#0F172A]/15 bg-white px-3 py-2 text-sm text-[#0F172A]"

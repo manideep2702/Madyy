@@ -5,7 +5,7 @@ import Image from "next/image";
 const features = [
   {
     Icon: Calendar,
-    name: "Samithi Calendar",
+    name: "Ayyappa Temple Calander",
     description:
       "Clear schedule of poojas, opening/closing days, and festivals. Core reason devotees visit the site.",
     href: "/calendar",
@@ -14,7 +14,7 @@ const features = [
       <div className="absolute inset-0 pointer-events-none">
         <Image
           src="/b2.jpeg"
-          alt="Samithi calendar background"
+          alt="Ayyappa Temple calander background"
           fill
           sizes="(max-width: 1024px) 100vw, 600px"
           className="object-cover object-center opacity-60"
