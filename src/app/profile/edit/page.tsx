@@ -13,17 +13,7 @@ type ProfileData = {
   tagline?: string;
   imageUrl?: string;
   bioParagraphs?: string[];
-  videoUrl?: string;
   highlights?: string[];
-  // New fields
-  associatedSince?: string;
-  roles?: string[];
-  phone?: string;
-  email?: string;
-  location?: string;
-  socialFacebook?: string;
-  socialInstagram?: string;
-  socialWhatsapp?: string;
 };
 
 export default function EditProfilePage() {
@@ -35,16 +25,7 @@ export default function EditProfilePage() {
     tagline: "",
     imageUrl: "",
     bioParagraphs: [""],
-    videoUrl: "",
     highlights: [""],
-    associatedSince: "",
-    roles: [""],
-    phone: "",
-    email: "",
-    location: "",
-    socialFacebook: "",
-    socialInstagram: "",
-    socialWhatsapp: "",
   });
 
   useEffect(() => {
@@ -80,16 +61,7 @@ export default function EditProfilePage() {
           tagline: (data.tagline || prev.tagline) as string,
           imageUrl: (data.image_url || data.avatar_url || prev.imageUrl) as string,
           bioParagraphs: Array.isArray(data.bio_paragraphs) ? (data.bio_paragraphs as string[]) : prev.bioParagraphs,
-          videoUrl: (data.video_url || prev.videoUrl) as string,
           highlights: Array.isArray(data.highlights) ? (data.highlights as string[]) : prev.highlights,
-          associatedSince: (data.associated_since || prev.associatedSince) as string,
-          roles: Array.isArray(data.roles) ? (data.roles as string[]) : prev.roles,
-          phone: (data.phone || prev.phone) as string,
-          email: (data.email || prev.email || user.email || "") as string,
-          location: (data.location || prev.location) as string,
-          socialFacebook: (data.social_facebook || prev.socialFacebook) as string,
-          socialInstagram: (data.social_instagram || prev.socialInstagram) as string,
-          socialWhatsapp: (data.social_whatsapp || prev.socialWhatsapp) as string,
         }));
       }
     };
@@ -112,17 +84,7 @@ export default function EditProfilePage() {
       avatar_url: next.imageUrl || "",
       image_url: next.imageUrl || "",
       bio_paragraphs: Array.isArray(next.bioParagraphs) ? next.bioParagraphs : [],
-      video_url: next.videoUrl || "",
       highlights: Array.isArray(next.highlights) ? next.highlights : [],
-      // New fields
-      associated_since: next.associatedSince || "",
-      roles: Array.isArray(next.roles) ? next.roles : [],
-      phone: next.phone || "",
-      email: (next.email || user.email || "").trim() || null,
-      location: next.location || "",
-      social_facebook: next.socialFacebook || "",
-      social_instagram: next.socialInstagram || "",
-      social_whatsapp: next.socialWhatsapp || "",
     } as Record<string, any>;
 
     // Try upsert using user_id, fallback to id. If unknown columns, retry with minimal payload.
@@ -140,9 +102,7 @@ export default function EditProfilePage() {
         avatar_url: payloadBase.avatar_url,
         image_url: payloadBase.image_url,
         bio_paragraphs: payloadBase.bio_paragraphs,
-        video_url: payloadBase.video_url,
         highlights: payloadBase.highlights,
-        email: payloadBase.email,
       } as Record<string, any>;
       ok = await attempt("user_id", minimal);
       if (ok.error) ok = await attempt("id", minimal);

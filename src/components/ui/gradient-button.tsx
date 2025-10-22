@@ -20,7 +20,10 @@ const gradientButtonVariants = cva(
     variants: {
       variant: {
         default: "",
-        variant: "gradient-button-variant",
+        variant: "gradient-button-variant gradient-button-annadanam", // legacy alias
+        temple: "gradient-button-temple",
+        pooja: "gradient-button-pooja",
+        annadanam: "gradient-button-annadanam",
       },
     },
     defaultVariants: {

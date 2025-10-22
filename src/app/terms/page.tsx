@@ -5,7 +5,7 @@ const sections = [
   { id: "eligibility", title: "2. Eligibility" },
   { id: "accounts", title: "3. Accounts & Security" },
   { id: "donations", title: "4. Donations" },
-  { id: "annadanam", title: "5. Annadanam Calendar & Bookings" },
+  { id: "annadanam", title: "5. Annadanam Virtual Queue Booking" },
   { id: "devotional", title: "6. Devotional Materials" },
   { id: "user-content", title: "7. User Content" },
   { id: "acceptable-use", title: "8. Acceptable Use" },
@@ -84,7 +84,7 @@ export default function TermsPage() {
             </div>
 
             <div id="annadanam" className="rounded-2xl border border-border bg-card/70 p-6 shadow-sm">
-              <h2 className="text-lg md:text-xl font-semibold">5. Annadanam Calendar & Bookings</h2>
+              <h2 className="text-lg md:text-xl font-semibold">5. Annadanam Virtual Queue Booking</h2>
               <ul className="mt-2 list-disc pl-5 text-sm text-muted-foreground space-y-1">
                 <li>Dates and timings are indicative and may change due to temple schedules or events.</li>
                 <li>Bookings are subject to availability and confirmation by temple administration.</li>

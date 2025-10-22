@@ -125,7 +125,7 @@ function AnnadanamCard() {
       </div>
       <div className="mt-5 flex items-center justify-center gap-3">
         <a href="/calendar/annadanam" className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-xs ring-1 ring-amber-300 text-indigo-900 hover:bg-amber-50">
-          Slot Booking
+          Virtual Queue Booking
         </a>
         <a href="/volunteer" className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-xs ring-1 ring-amber-300 text-indigo-900 hover:bg-amber-50">
           Volunteer

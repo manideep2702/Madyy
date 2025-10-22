@@ -3,6 +3,7 @@ import path from "path";
 import { promises as fs } from "fs";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 const AUDIO_MAP: Record<string, string> = {
   "Sreekovil-Nada-Thurannu-Jayan-Jaya-Vijaya.mp3": path.join(process.cwd(), "Sreekovil-Nada-Thurannu-Jayan-Jaya-Vijaya.mp3"),
@@ -27,4 +28,3 @@ export async function GET(_req: NextRequest, { params }: { params: { name: strin
     return NextResponse.json({ error: "Failed to read audio" }, { status: 500 });
   }
 }
-

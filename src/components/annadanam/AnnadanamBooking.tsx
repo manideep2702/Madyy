@@ -127,15 +127,16 @@ function isLastSession(label: string) {
 function isBookableNow(label: string, date: Date) {
   const t = computeSlotTimes(date, label);
   if (!t) return false;
+  // Compute current time in IST regardless of user's local timezone
   const now = new Date();
-  const openAt = new Date(t.start.getTime() - 24 * 60 * 60 * 1000);
-  if (now < openAt) return false; // opens 24h before session start
-  // Last session closes 30 minutes before its start
-  if (isLastSession(label)) {
-    const lastClose = new Date(t.start.getTime() - 30 * 60 * 1000);
-    if (now >= lastClose) return false;
-  }
-  // All sessions close at their start time
+  const utcMs = now.getTime() + now.getTimezoneOffset() * 60 * 1000;
+  const ist = new Date(utcMs + 5.5 * 60 * 60 * 1000);
+  const minutes = ist.getHours() * 60 + ist.getMinutes();
+  const isAfternoon = AFTERNOON_SLOTS.some((a) => a.label === label);
+  const [startMin, endMin] = isAfternoon ? [5 * 60, 11 * 60 + 30] : [15 * 60, 19 * 60 + 30];
+  const withinWindow = minutes >= startMin && minutes <= endMin;
+  if (!withinWindow) return false;
+  // Close at session start (cannot book once session begins)
   if (now >= t.start) return false;
   return true;
 }
@@ -195,7 +196,9 @@ function SessionPicker({
       const isAfternoon = AFTERNOON_SLOTS.some((a) => a.label === value);
       const groupRemaining = isAfternoon ? 150 - aftTotal : 150 - eveTotal;
       if (groupRemaining <= 0) infoText = "Session full";
-      else infoText = isLastSession(value) ? "Opens until 30m before last session" : "Opens 24h before start";
+      else infoText = isAfternoon
+        ? "Booking window: 5:00–11:30 IST"
+        : "Booking window: 15:00–19:30 IST";
     }
     return (
       <Card>
@@ -524,7 +527,7 @@ export default function AnnadanamBooking() {
     <div className="container mx-auto py-8 px-4 max-w-6xl">
       <div className="mb-8">
         <h2 className="text-2xl font-semibold">Annadanam Slot Booking</h2>
-        <p className="text-muted-foreground">Choose a time below. Booking opens 24 hours before, and closes 30 minutes before the last session.</p>
+        <p className="text-muted-foreground">Choose a time below. Booking windows (IST): Afternoon 5:00–11:30, Evening 15:00–19:30.</p>
       </div>
       <div className="grid gap-6 lg:grid-cols-3 mb-8">
         <div className="lg:col-span-1">

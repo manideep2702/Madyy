@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { setAdminCookie, validateAdminLogin } from "@/lib/admin-auth";
 
+export const runtime = "nodejs";
+
 export async function POST(req: Request) {
   try {
     const { email, password } = await req.json();
@@ -15,4 +17,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Bad request" }, { status: 400 });
   }
 }
-

@@ -16,11 +16,14 @@ export default function CalendarPage() {
             Choose a calendar to explore Samithi events and annadanam schedules.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-6">
-            <GradientButton onClick={() => router.push("/calendar/temple")}>
+            <GradientButton variant="temple" onClick={() => router.push("/calendar/temple")}>
               Ayyappa Temple Calander
             </GradientButton>
-            <GradientButton variant="variant" onClick={() => router.push("/calendar/annadanam")}>
-              Annadanam Calendar
+            <GradientButton variant="pooja" onClick={() => router.push("/calendar/pooja")}>
+              Pooja Booking
+            </GradientButton>
+            <GradientButton variant="annadanam" onClick={() => router.push("/calendar/annadanam")}>
+              Annadanam Virtual Queue Booking
             </GradientButton>
           </div>
         </div>

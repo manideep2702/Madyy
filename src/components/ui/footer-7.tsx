@@ -32,7 +32,7 @@ const defaultSections = [
       { name: "Home", href: "/" },
       { name: "Calendar", href: "/calendar" },
       { name: "Ayyappa Temple Calander", href: "/calendar/temple" },
-      { name: "Annadanam Calendar", href: "/calendar/annadanam" },
+      { name: "Annadanam Virtual Queue Booking", href: "/calendar/annadanam" },
     ],
   },
   {

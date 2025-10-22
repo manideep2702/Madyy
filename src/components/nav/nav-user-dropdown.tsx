@@ -264,7 +264,7 @@ export default function NavUserDropdown() {
                   onClick={() => (window.location.href = "/calendar/annadanam")}
                   className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-amber-600 text-white px-4 py-2.5 text-sm hover:bg-amber-500"
                 >
-                  <CalendarDays className="h-4 w-4" /> Annadanam slot booking
+                  <CalendarDays className="h-4 w-4" /> Annadanam Virtual Queue Booking
                 </button>
               </div>
             )}

@@ -23,7 +23,7 @@ export default function Page() {
               className="w-full h-auto rounded-xl border border-border object-cover"
             />
           </div>
-          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">Annadanam Calendar</h1>
+          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">Annadanam Virtual Queue Booking</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Annadanam season runs from <span className="font-medium text-foreground">{start}</span> to
             {" "}

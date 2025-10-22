@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 type Window = "afternoon" | "evening";
 
 const AFTERNOON_SESSIONS = [
-  "12:45 PM - 1:30 PM",
+  "1:00 PM - 1:30 PM",
   "1:30 PM - 2:00 PM",
   "2:00 PM - 2:30 PM",
   "2:30 PM - 3:00 PM",

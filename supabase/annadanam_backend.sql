@@ -189,6 +189,8 @@ DECLARE
   last_start timestamptz;
   group_total int := 0;
   is_afternoon boolean := false;
+  now_ist timestamp := (now() AT TIME ZONE 'Asia/Kolkata');
+  now_ist_time time := (now() AT TIME ZONE 'Asia/Kolkata')::time;
 BEGIN
   -- Enforce season window
   IF NOT (d BETWEEN DATE '2025-11-05' AND DATE '2026-01-07' OR d = DATE '2025-10-10' OR d = DATE '2025-10-17') THEN
@@ -217,15 +219,23 @@ BEGIN
   start_at := (d::text || ' ' || start_local::text || '+05:30')::timestamptz;
   last_start := (d::text || ' 21:30+05:30')::timestamptz; -- last session start
 
-  -- Enforce booking open/close window
-  IF now() < start_at - interval '24 hours' THEN
-    RAISE EXCEPTION 'Booking opens 24 hours before the session start';
-  END IF;
-  IF s = '9:30 PM - 10:00 PM' AND now() >= last_start - interval '30 minutes' THEN
-    RAISE EXCEPTION 'Booking closed 30 minutes before the last session';
-  END IF;
-  IF now() >= start_at THEN
+  -- Enforce daily booking windows (IST):
+  -- Afternoon sessions: 05:00–11:30 IST
+  -- Evening sessions:   15:00–19:30 IST
+  -- Also block once the session has started
+  -- Block if session already started (based on IST)
+  IF (now() AT TIME ZONE 'Asia/Kolkata') >= start_at AT TIME ZONE 'Asia/Kolkata' THEN
     RAISE EXCEPTION 'Slot already started';
+  END IF;
+  -- Time-of-day gating
+  IF s = ANY (ARRAY['1:00 PM - 1:30 PM','1:30 PM - 2:00 PM','2:00 PM - 2:30 PM','2:30 PM - 3:00 PM']) THEN
+    IF NOT (now_ist_time >= time '05:00' AND now_ist_time <= time '11:30') THEN
+      RAISE EXCEPTION 'Booking allowed 05:00–11:30 IST for afternoon sessions';
+    END IF;
+  ELSE
+    IF NOT (now_ist_time >= time '15:00' AND now_ist_time <= time '19:30') THEN
+      RAISE EXCEPTION 'Booking allowed 15:00–19:30 IST for evening sessions';
+    END IF;
   END IF;
 
   SELECT * INTO slot_rec FROM public."Slots" WHERE date = d AND session = s FOR UPDATE;

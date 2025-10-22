@@ -12,24 +12,13 @@ export default function ProfileEditorForm({ initialValue, onSave, onCancel, onIm
       ? initialValue.bioParagraphs
       : [""]
   );
-  const [videoUrl, setVideoUrl] = useState(initialValue?.videoUrl || "");
   const [highlights, setHighlights] = useState(
     Array.isArray(initialValue?.highlights) && initialValue.highlights.length > 0
       ? initialValue.highlights
       : [""]
   );
 
-  // Details fields
-  const [associatedSince, setAssociatedSince] = useState(initialValue?.associatedSince || "");
-  const [roles, setRoles] = useState(
-    Array.isArray(initialValue?.roles) && initialValue.roles.length > 0 ? initialValue.roles : [""]
-  );
-  const [phone, setPhone] = useState(initialValue?.phone || "");
-  const [email, setEmail] = useState(initialValue?.email || "");
-  const [location, setLocation] = useState(initialValue?.location || "");
-  const [socialFacebook, setSocialFacebook] = useState(initialValue?.socialFacebook || "");
-  const [socialInstagram, setSocialInstagram] = useState(initialValue?.socialInstagram || "");
-  const [socialWhatsapp, setSocialWhatsapp] = useState(initialValue?.socialWhatsapp || "");
+  // Details section removed per request
 
   const [errors, setErrors] = useState({});
 
@@ -43,21 +32,11 @@ export default function ProfileEditorForm({ initialValue, onSave, onCancel, onIm
         ? initialValue.bioParagraphs
         : [""]
     );
-    setVideoUrl(initialValue?.videoUrl || "");
     setHighlights(
       Array.isArray(initialValue?.highlights) && initialValue.highlights.length > 0
         ? initialValue.highlights
         : [""]
     );
-    // Details
-    setAssociatedSince(initialValue?.associatedSince || "");
-    setRoles(Array.isArray(initialValue?.roles) && initialValue.roles.length > 0 ? initialValue.roles : [""]);
-    setPhone(initialValue?.phone || "");
-    setEmail(initialValue?.email || "");
-    setLocation(initialValue?.location || "");
-    setSocialFacebook(initialValue?.socialFacebook || "");
-    setSocialInstagram(initialValue?.socialInstagram || "");
-    setSocialWhatsapp(initialValue?.socialWhatsapp || "");
   }, [initialValue]);
 
   const onFileChange = async (file) => {
@@ -89,43 +68,16 @@ export default function ProfileEditorForm({ initialValue, onSave, onCancel, onIm
 
   const normalize = (arr) => arr.map((s) => String(s ?? "").trim()).filter((s) => s);
 
-  const toEmbedUrl = (url) => {
-    try {
-      if (!url) return "";
-      const u = new URL(url, typeof window !== "undefined" ? window.location.origin : "http://localhost");
-      if (u.hostname.includes("youtube.com") && u.searchParams.get("v")) {
-        return `https://www.youtube.com/embed/${u.searchParams.get("v")}`;
-      }
-      if (u.hostname.includes("youtu.be")) {
-        const id = u.pathname.replace("/", "");
-        if (id) return `https://www.youtube.com/embed/${id}`;
-      }
-      return url;
-    } catch {
-      return url;
-    }
-  };
-
   const validate = () => {
     const errs = {};
     const normalizedBios = normalize(bioParagraphs);
     const normalizedHighlights = normalize(highlights);
     const hasImage = !!(imageUrl || initialValue?.imageUrl);
-    const isValidUrl = (u) => {
-      try {
-        if (!u) return false;
-        new URL(u, typeof window !== "undefined" ? window.location.origin : "http://localhost");
-        return true;
-      } catch {
-        return false;
-      }
-    };
     if (!name.trim()) errs.name = "Full name is required";
     if (!designation.trim()) errs.designation = "Designation is required";
     if (!tagline.trim()) errs.tagline = "Tagline is required";
     if (!hasImage) errs.imageUrl = "Profile photo is required";
     if (normalizedBios.length === 0) errs.bioParagraphs = "At least one bio paragraph is required";
-    if (!videoUrl.trim() || !isValidUrl(videoUrl.trim())) errs.videoUrl = "Valid video URL is required";
     if (normalizedHighlights.length === 0) errs.highlights = "At least one highlight is required";
     return { errs, normalizedBios, normalizedHighlights };
   };
@@ -149,17 +101,8 @@ export default function ProfileEditorForm({ initialValue, onSave, onCancel, onIm
       tagline: tagline.trim(),
       imageUrl: imageUrl || initialValue?.imageUrl || "",
       bioParagraphs: normalizedBios,
-      videoUrl: toEmbedUrl(videoUrl.trim()),
       highlights: normalizedHighlights,
-      // Details
-      associatedSince,
-      roles: roles.map((r) => r.trim()).filter(Boolean),
-      phone: phone.trim(),
-      email: email.trim(),
-      location: location.trim(),
-      socialFacebook: socialFacebook.trim(),
-      socialInstagram: socialInstagram.trim(),
-      socialWhatsapp: socialWhatsapp.trim(),
+      // Details removed
     };
     onSave?.(next);
   };
@@ -238,7 +181,7 @@ export default function ProfileEditorForm({ initialValue, onSave, onCancel, onIm
         {/* About section */}
         <div className="md:col-span-2 mt-6">
           <h3 className="text-lg font-semibold text-foreground">About</h3>
-          <p className="text-xs text-muted-foreground">Update biography, video, and highlights.</p>
+          <p className="text-xs text-muted-foreground">Update biography and highlights.</p>
         </div>
 
         <div className="md:col-span-2 grid gap-3">
@@ -281,18 +224,7 @@ export default function ProfileEditorForm({ initialValue, onSave, onCancel, onIm
           </div>
         </div>
 
-        <label className="md:col-span-2 block text-left">
-          <span className="mb-1 block text-xs font-medium text-foreground">Video URL (YouTube/Vimeo) *</span>
-          <input
-            data-field="videoUrl"
-            value={videoUrl}
-            onChange={(e) => setVideoUrl(e.target.value)}
-            className="w-full rounded-xl bg-white/5 px-4 py-3 text-sm ring-1 ring-border placeholder:text-muted-foreground focus:ring-2 focus:outline-none"
-            placeholder="https://www.youtube.com/watch?v=... or embed URL"
-            required
-          />
-          {errors.videoUrl && <p className="mt-1 text-xs text-red-400">{errors.videoUrl}</p>}
-        </label>
+        {/* Video URL removed per request */}
 
         <div className="md:col-span-2 grid gap-3">
           <label className="text-xs font-medium text-foreground">Highlights *</label>
@@ -330,118 +262,7 @@ export default function ProfileEditorForm({ initialValue, onSave, onCancel, onIm
           </div>
         </div>
 
-        {/* Details section */}
-        <div className="md:col-span-2 mt-8">
-          <h3 className="text-lg font-semibold text-foreground">Details</h3>
-          <p className="text-xs text-muted-foreground">Associated date, roles, contact info, location and social links.</p>
-        </div>
-
-        <label className="block text-left">
-          <span className="mb-1 block text-xs font-medium text-foreground">Associated Since</span>
-          <input
-            type="date"
-            value={associatedSince}
-            onChange={(e) => setAssociatedSince(e.target.value)}
-            className="w-full rounded-xl bg-white/5 px-4 py-3 text-sm ring-1 ring-border placeholder:text-muted-foreground focus:ring-2 focus:outline-none"
-          />
-        </label>
-
-        <div className="md:col-span-2 grid gap-3">
-          <label className="text-xs font-medium text-foreground">Roles & Responsibilities</label>
-          {roles.map((r, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <input
-                value={r}
-                onChange={(e) => {
-                  const next = [...roles];
-                  next[i] = e.target.value;
-                  setRoles(next);
-                }}
-                className="flex-1 rounded-xl bg-white/5 px-4 py-3 text-sm ring-1 ring-border placeholder:text-muted-foreground focus:ring-2 focus:outline-none"
-                placeholder="e.g., Volunteer coordinator"
-              />
-              <button
-                type="button"
-                onClick={() => setRoles(roles.filter((_, idx) => idx !== i))}
-                className="rounded-md px-2 py-1 text-xs ring-1 ring-border text-foreground hover:bg-white/5"
-              >
-                Remove
-              </button>
-            </div>
-          ))}
-          <div>
-            <button
-              type="button"
-              onClick={() => setRoles([...roles, ""])}
-              className="rounded-md px-3 py-1.5 text-xs ring-1 ring-border text-foreground hover:bg-white/5"
-            >
-              + Add role
-            </button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:col-span-2">
-          <label className="block text-left">
-            <span className="mb-1 block text-xs font-medium text-foreground">Contact Phone</span>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="w-full rounded-xl bg-white/5 px-4 py-3 text-sm ring-1 ring-border placeholder:text-muted-foreground focus:ring-2 focus:outline-none"
-              placeholder="e.g., +91 98765 43210"
-            />
-          </label>
-          <label className="block text-left">
-            <span className="mb-1 block text-xs font-medium text-foreground">Contact Email</span>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-xl bg-white/5 px-4 py-3 text-sm ring-1 ring-border placeholder:text-muted-foreground focus:ring-2 focus:outline-none"
-              placeholder="your@email.com"
-            />
-          </label>
-        </div>
-
-        <label className="md:col-span-2 block text-left">
-          <span className="mb-1 block text-xs font-medium text-foreground">Location</span>
-          <input
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            className="w-full rounded-xl bg-white/5 px-4 py-3 text-sm ring-1 ring-border placeholder:text-muted-foreground focus:ring-2 focus:outline-none"
-            placeholder="City, State"
-          />
-        </label>
-
-        <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <label className="block text-left">
-            <span className="mb-1 block text-xs font-medium text-foreground">Facebook URL</span>
-            <input
-              value={socialFacebook}
-              onChange={(e) => setSocialFacebook(e.target.value)}
-              className="w-full rounded-xl bg-white/5 px-4 py-3 text-sm ring-1 ring-border placeholder:text-muted-foreground focus:ring-2 focus:outline-none"
-              placeholder="https://facebook.com/username"
-            />
-          </label>
-          <label className="block text-left">
-            <span className="mb-1 block text-xs font-medium text-foreground">Instagram URL</span>
-            <input
-              value={socialInstagram}
-              onChange={(e) => setSocialInstagram(e.target.value)}
-              className="w-full rounded-xl bg-white/5 px-4 py-3 text-sm ring-1 ring-border placeholder:text-muted-foreground focus:ring-2 focus:outline-none"
-              placeholder="https://instagram.com/username"
-            />
-          </label>
-          <label className="block text-left">
-            <span className="mb-1 block text-xs font-medium text-foreground">WhatsApp URL</span>
-            <input
-              value={socialWhatsapp}
-              onChange={(e) => setSocialWhatsapp(e.target.value)}
-              className="w-full rounded-xl bg-white/5 px-4 py-3 text-sm ring-1 ring-border placeholder:text-muted-foreground focus:ring-2 focus:outline-none"
-              placeholder="https://wa.me/<number>"
-            />
-          </label>
-        </div>
+        {/* Details section removed per request */}
 
         <div className="md:col-span-2 flex items-center gap-3">
           <button

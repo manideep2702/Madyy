@@ -3,6 +3,7 @@ import path from "path";
 import { promises as fs } from "fs";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 const GALLERY_DIR = path.join(process.cwd(), "gallery");
 

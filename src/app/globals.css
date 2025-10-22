@@ -311,13 +311,14 @@
   }
 
   .gradient-button-variant {
-    --color-1: #000022;
-    --color-2: #1f3f6d;
-    --color-3: #469396;
-    --color-4: #f1ffa5;
+    /* Keep as alias; styles moved to .gradient-button-annadanam */
+    --color-1: #05251a;
+    --color-2: #0a3b2a;
+    --color-3: #1e7f5f;
+    --color-4: #9fe3c2;
     --border-angle: 200deg;
-    --border-color-1: hsla(320, 75%, 90%, 0.6);
-    --border-color-2: hsla(320, 50%, 90%, 0.15);
+    --border-color-1: hsla(150, 65%, 80%, 0.6);
+    --border-color-2: hsla(150, 55%, 90%, 0.15);
   }
 
   .gradient-button-variant:hover {
@@ -325,10 +326,10 @@
     --pos-y: 95.51%;
     --spread-x: 110.24%;
     --spread-y: 110.2%;
-    --color-1: #000020;
-    --color-2: #f1ffa5;
-    --color-3: #469396;
-    --color-4: #1f3f6d;
+    --color-1: #05251a;
+    --color-2: #9fe3c2;
+    --color-3: #1e7f5f;
+    --color-4: #0a3b2a;
     --color-5: #000;
     --stop-1: 0%;
     --stop-2: 10%;
@@ -336,8 +337,99 @@
     --stop-4: 71.34%;
     --stop-5: 90.76%;
     --border-angle: 210deg;
-    --border-color-1: hsla(320, 75%, 90%, 0.2);
-    --border-color-2: hsla(320, 50%, 90%, 0.75);
+    --border-color-1: hsla(150, 65%, 80%, 0.2);
+    --border-color-2: hsla(150, 55%, 90%, 0.75);
+  }
+
+  /* New themed variants to match site palette */
+  .gradient-button-temple {
+    /* Deep indigo to temple gold */
+    --color-1: #0f172a; /* slate/indigo base */
+    --color-2: #1e2760;
+    --color-3: #2f3fa3;
+    --color-4: #d4af37; /* temple gold */
+    --border-angle: 220deg;
+    --border-color-1: rgba(212, 175, 55, 0.3);
+    --border-color-2: rgba(15, 23, 42, 0.5);
+  }
+  .gradient-button-temple:hover {
+    --pos-x: 0%;
+    --pos-y: 92%;
+    --spread-x: 120%;
+    --spread-y: 110%;
+    --color-1: #0b1024;
+    --color-2: #d4af37;
+    --color-3: #2f3fa3;
+    --color-4: #1e2760;
+    --color-5: #000;
+    --stop-1: 0%;
+    --stop-2: 12%;
+    --stop-3: 38%;
+    --stop-4: 74%;
+    --stop-5: 92%;
+    --border-angle: 235deg;
+    --border-color-1: rgba(212, 175, 55, 0.2);
+    --border-color-2: rgba(212, 175, 55, 0.7);
+  }
+
+  .gradient-button-pooja {
+    /* Saffron → maroon with gold accent */
+    --color-1: #3b0a0a;   /* deep maroon */
+    --color-2: #8c1b1b;   /* maroon */
+    --color-3: #f59e0b;   /* saffron/amber */
+    --color-4: #ffd889;   /* soft gold */
+    --border-angle: 200deg;
+    --border-color-1: rgba(245, 158, 11, 0.35);
+    --border-color-2: rgba(139, 10, 10, 0.4);
+  }
+  .gradient-button-pooja:hover {
+    --pos-x: 0%;
+    --pos-y: 95%;
+    --spread-x: 115%;
+    --spread-y: 112%;
+    --color-1: #2a0606;
+    --color-2: #ffd889;
+    --color-3: #f59e0b;
+    --color-4: #8c1b1b;
+    --color-5: #000;
+    --stop-1: 0%;
+    --stop-2: 10%;
+    --stop-3: 36%;
+    --stop-4: 72%;
+    --stop-5: 91%;
+    --border-angle: 215deg;
+    --border-color-1: rgba(245, 158, 11, 0.25);
+    --border-color-2: rgba(245, 158, 11, 0.65);
+  }
+
+  .gradient-button-annadanam {
+    /* Green/teal to reflect annadanam/community */
+    --color-1: #05251a;
+    --color-2: #0a3b2a;
+    --color-3: #1e7f5f;
+    --color-4: #9fe3c2;
+    --border-angle: 200deg;
+    --border-color-1: hsla(150, 65%, 80%, 0.6);
+    --border-color-2: hsla(150, 55%, 90%, 0.15);
+  }
+  .gradient-button-annadanam:hover {
+    --pos-x: 0%;
+    --pos-y: 95.51%;
+    --spread-x: 110.24%;
+    --spread-y: 110.2%;
+    --color-1: #05251a;
+    --color-2: #9fe3c2;
+    --color-3: #1e7f5f;
+    --color-4: #0a3b2a;
+    --color-5: #000;
+    --stop-1: 0%;
+    --stop-2: 10%;
+    --stop-3: 35.44%;
+    --stop-4: 71.34%;
+    --stop-5: 90.76%;
+    --border-angle: 210deg;
+    --border-color-1: hsla(150, 65%, 80%, 0.2);
+    --border-color-2: hsla(150, 55%, 90%, 0.75);
   }
 }
 

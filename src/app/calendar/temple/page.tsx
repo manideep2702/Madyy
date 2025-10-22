@@ -59,6 +59,13 @@ export default function Page() {
       notes: "",
     },
     {
+      period: "Dec 2025–Jan 2026",
+      event: "Thirunadai Thirappu - Makaravilakku Mahotsavam",
+      opening: "30/12/2025",
+      closing: "20/01/2026",
+      notes: "",
+    },
+    {
       period: "Jan 2026",
       event: "Makaravilakku Day",
       opening: "14/01/2026",
