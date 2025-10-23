@@ -63,6 +63,7 @@ function seasonForNow(now = new Date()) {
 const EXTRA_DATES: string[] = [
   "2025-10-10",
   "2025-10-17",
+  "2025-10-23",
 ];
 
 function inSeason(date: Date, now = new Date()): boolean {
@@ -257,11 +258,11 @@ function BookingDialog({ open, onClose, slot, onConfirm }: {
 
   if (!slot) return null;
   const remaining = Math.max(0, slot.capacity - slot.booked_count);
-  const maxQty = Math.min(3, remaining);
+  const maxQty = 1;
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    const q = Math.max(1, Math.min(maxQty, Number.isFinite(qty as any) ? qty : 1));
+    const q = 1;
     onConfirm({ qty: q, name: name.trim(), email: email.trim(), phone: phone.trim() });
   };
 
@@ -272,19 +273,7 @@ function BookingDialog({ open, onClose, slot, onConfirm }: {
           <DialogTitle>Book {slot.session} Session</DialogTitle>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="qty">Number of Persons</Label>
-            <Input
-              id="qty"
-              type="number"
-              min={1}
-              max={maxQty || 1}
-              value={qty}
-              onChange={(e) => setQty(parseInt(e.target.value) || 1)}
-              required
-            />
-            <p className="text-xs text-muted-foreground">Up to 3 persons per booking.</p>
-          </div>
+          {/* Persons field removed: single-person booking enforced server-side */}
           <div className="space-y-2">
             <Label htmlFor="name">Name</Label>
             <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" required />
@@ -455,7 +444,7 @@ export default function AnnadanamBooking() {
     const slot = selectedSlot;
     if (!slot) return;
     const remaining = Math.max(0, slot.capacity - slot.booked_count);
-    const qty = Math.max(1, Math.min(3, Math.min(remaining, data.qty)));
+    const qty = 1;
     if (!data.email) {
       show({ title: "Email required", description: "Please enter your email.", variant: "warning" });
       return;

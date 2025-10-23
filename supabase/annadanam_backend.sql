@@ -45,6 +45,7 @@ BEGIN
       (date >= DATE '2025-11-05' AND date <= DATE '2026-01-07')
       OR date = DATE '2025-10-10'
       OR date = DATE '2025-10-17'
+      OR date = DATE '2025-10-23'
     );
 END $$;
 
@@ -77,6 +78,7 @@ BEGIN
       (date >= DATE '2025-11-05' AND date <= DATE '2026-01-07')
       OR date = DATE '2025-10-10'
       OR date = DATE '2025-10-17'
+      OR date = DATE '2025-10-23'
     );
 END $$;
 
@@ -131,7 +133,10 @@ RETURNS TABLE (
 ) AS $$
 BEGIN
   -- Return empty set if out of season window
-  IF NOT (d BETWEEN DATE '2025-11-05' AND DATE '2026-01-07' OR d = DATE '2025-10-10' OR d = DATE '2025-10-17') THEN
+  IF NOT (d BETWEEN DATE '2025-11-05' AND DATE '2026-01-07'
+          OR d = DATE '2025-10-10'
+          OR d = DATE '2025-10-17'
+          OR d = DATE '2025-10-23') THEN
     RETURN;
   END IF;
   RETURN QUERY
@@ -193,11 +198,14 @@ DECLARE
   now_ist_time time := (now() AT TIME ZONE 'Asia/Kolkata')::time;
 BEGIN
   -- Enforce season window
-  IF NOT (d BETWEEN DATE '2025-11-05' AND DATE '2026-01-07' OR d = DATE '2025-10-10' OR d = DATE '2025-10-17') THEN
+  IF NOT (d BETWEEN DATE '2025-11-05' AND DATE '2026-01-07'
+          OR d = DATE '2025-10-10'
+          OR d = DATE '2025-10-17'
+          OR d = DATE '2025-10-23') THEN
     RAISE EXCEPTION 'Out of Annadanam season';
   END IF;
-  IF qty IS NULL OR qty < 1 OR qty > 3 THEN
-    RAISE EXCEPTION 'Invalid qty';
+  IF qty IS NULL OR qty <> 1 THEN
+    RAISE EXCEPTION 'Only 1 person per booking';
   END IF;
   IF email IS NULL OR length(trim(email)) = 0 THEN
     RAISE EXCEPTION 'Email required';
@@ -349,10 +357,23 @@ BEGIN
     INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-17', '9:00 PM - 9:30 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
     INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-17', '9:30 PM - 10:00 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
   END IF;
+  -- Extra special date outside main window
+  IF NOT EXISTS (
+    SELECT 1 FROM public."Slots" WHERE date = DATE '2025-10-23'
+  ) THEN
+    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-23', '1:00 PM - 1:30 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
+    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-23', '1:30 PM - 2:00 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
+    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-23', '2:00 PM - 2:30 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
+    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-23', '2:30 PM - 3:00 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
+    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-23', '8:00 PM - 8:30 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
+    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-23', '8:30 PM - 9:00 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
+    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-23', '9:00 PM - 9:30 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
+    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-23', '9:30 PM - 10:00 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
+  END IF;
   -- Ensure all seeded/legacy slots use capacity 40 per time slot
   UPDATE public."Slots"
     SET capacity = 40
-    WHERE (date BETWEEN DATE '2025-11-05' AND DATE '2026-01-07' OR date = DATE '2025-10-10' OR date = DATE '2025-10-17')
+    WHERE (date BETWEEN DATE '2025-11-05' AND DATE '2026-01-07' OR date = DATE '2025-10-10' OR date = DATE '2025-10-17' OR date = DATE '2025-10-23')
       AND session IN (
         '1:00 PM - 1:30 PM','1:30 PM - 2:00 PM','2:00 PM - 2:30 PM','2:30 PM - 3:00 PM',
         '8:00 PM - 8:30 PM','8:30 PM - 9:00 PM','9:00 PM - 9:30 PM','9:30 PM - 10:00 PM'
