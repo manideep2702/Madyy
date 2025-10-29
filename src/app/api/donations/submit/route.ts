@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -114,6 +115,53 @@ export async function POST(req: NextRequest) {
       { filename: `payment_screenshot_${Date.now()}.png`, content: shotBuf, contentType: (screenshot as File).type || "image/png" },
     ];
 
+    // Persist to Supabase: upload screenshot and insert donation row
+    let storage_bucket: string | null = null;
+    let storage_path: string | null = null;
+    try {
+      const admin = getSupabaseAdminClient();
+      storage_bucket = "donations";
+      // Ensure bucket exists (ignore if already exists)
+      try {
+        await admin.storage.createBucket(storage_bucket, { public: false, fileSizeLimit: "5242880" });
+      } catch {}
+      const origName = (screenshot as File).name || "screenshot.png";
+      const safeExt = ((origName.split(".").pop() || "png").toLowerCase()).replace(/[^a-z0-9]/g, "");
+      const fileExt = safeExt || ((screenshot as File).type?.split("/").pop() || "png");
+      const key = `screenshots/${new Date().toISOString().slice(0, 10)}/${Date.now()}_${Math.random().toString(36).slice(2)}.${fileExt}`;
+      const up = await admin.storage.from(storage_bucket).upload(key, shotBuf, { contentType: (screenshot as File).type || "image/png", upsert: false });
+      if (!up.error) storage_path = key;
+
+      // Insert row
+      const insert = await admin
+        .from("donations")
+        .insert({
+          name,
+          email,
+          phone,
+          address,
+          amount,
+          storage_bucket,
+          storage_path,
+          status: "submitted",
+        })
+        .select("*")
+        .single();
+      if (insert.error) {
+        // If table missing, return a helpful error
+        if (/relation .* does not exist/i.test(insert.error.message)) {
+          return NextResponse.json({
+            error: "Missing donations table. Create it using supabase/donations.sql in your project.",
+          }, { status: 400 });
+        }
+        // Non-fatal; continue with email send, but inform client
+        console.error("Failed to insert donation row:", insert.error);
+      }
+    } catch (e) {
+      // If Supabase is not configured, continue with email-only path
+      console.warn("Supabase not configured or failed while saving donation:", (e as any)?.message || e);
+    }
+
     await sendSMTP({ to: email, subject: userSubject, html: userHtml });
     await sendSMTP({ to: adminEmail, subject: adminSubject, html: adminHtml, attachments });
 
@@ -123,4 +171,3 @@ export async function POST(req: NextRequest) {
     return new NextResponse(err?.message || "Internal error", { status: 500 });
   }
 }
-
