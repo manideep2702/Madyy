@@ -1,15 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { ShieldCheck, BadgeCheck, FileText, Phone, Mail, MapPin, HeartHandshake } from "lucide-react";
 import { GradientButton } from "@/components/ui/gradient-button";
 import RequireAuth from "@/components/auth/require-auth";
 
 export default function DonatePage() {
-  // Psychological pricing: 99-ending amounts
-  const preset = [249, 499, 999] as const;
-  const [amount, setAmount] = useState<number | null>(preset[0]);
-  const [custom, setCustom] = useState<string>("");
+  // Amount selection removed per request
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -17,24 +14,16 @@ export default function DonatePage() {
   const [panFile, setPanFile] = useState<File | null>(null);
   const [address, setAddress] = useState("");
 
-  const finalAmount = useMemo(() => {
-    const v = custom.trim() !== "" ? Number(custom) : amount ?? 0;
-    return isFinite(v) ? v : 0;
-  }, [amount, custom]);
-
-  const requirePan = finalAmount >= 1999; // PAN card upload required for ₹1999 and above
+  // Make PAN card mandatory for all donations
+  const requirePan = true;
 
   async function proceed() {
-    if (!finalAmount || finalAmount < 1) {
-      alert("Please enter a valid amount.");
-      return;
-    }
     if (!name || !email || !phone) {
       alert("Please fill Name, Email and Phone.");
       return;
     }
-    if (requirePan && !panFile) {
-      alert("PAN card upload is required for donations of ₹1999 and above.");
+    if (!panFile) {
+      alert("PAN card upload is required.");
       return;
     }
     if (panFile && panFile.size > 5 * 1024 * 1024) {
@@ -45,8 +34,7 @@ export default function DonatePage() {
       const hasSupabaseEnv = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
       if (!hasSupabaseEnv) {
         // If auth is not configured, still ask to sign in per requirement
-        const next = `/donate?amount=${finalAmount}`;
-        window.location.assign(`/sign-in?next=${encodeURIComponent(next)}`);
+        window.location.assign(`/sign-in?next=${encodeURIComponent('/donate')}`);
         return;
       }
       const { getSupabaseBrowserClient } = await import("@/lib/supabase/client");
@@ -54,18 +42,14 @@ export default function DonatePage() {
       const { data: userRes } = await supabase.auth.getUser();
       const user = userRes?.user;
       if (!user) {
-        const params = new URLSearchParams();
-        params.set("amount", String(finalAmount));
-        const next = `/donate?${params.toString()}`;
-        window.location.assign(`/sign-in?next=${encodeURIComponent(next)}`);
+        window.location.assign(`/sign-in?next=${encodeURIComponent('/donate')}`);
         return;
       }
-      alert(`Thank you, ${name}! Proceeding with donation of ₹${finalAmount}.`);
+      alert(`Thank you, ${name}! Proceeding with donation.`);
       // TODO: integrate payment gateway here
     } catch {
       // Fallback: ask sign-in
-      const next = `/donate?amount=${finalAmount}`;
-      window.location.assign(`/sign-in?next=${encodeURIComponent(next)}`);
+      window.location.assign(`/sign-in?next=${encodeURIComponent('/donate')}`);
     }
   }
 
@@ -100,67 +84,7 @@ export default function DonatePage() {
         </div>
       </section>
 
-      {/* Donation options */}
-      <section className="mx-auto w-full max-w-4xl px-6 py-10">
-        <div className="rounded-2xl border border-border bg-card/70 p-6 shadow-sm">
-          <h2 className="text-xl md:text-2xl font-semibold">Choose an amount</h2>
-          <div className="mt-4 flex flex-wrap gap-3">
-            {preset.map((v) => (
-              <button
-                key={v}
-                onClick={() => {
-                  setAmount(v);
-                  setCustom("");
-                }}
-                aria-pressed={amount === v && custom === ""}
-                className={`min-w-[110px] rounded-xl px-5 py-3 text-base font-medium ring-1 transition-all focus:outline-none focus:ring-2 ${
-                  amount === v && custom === ""
-                    ? "bg-amber-600 text-white ring-amber-600"
-                    : "bg-white/5 ring-border hover:bg-white/10"
-                }`}
-              >
-                ₹{v}
-              </button>
-            ))}
-
-            <div className="relative">
-              <input
-                inputMode="numeric"
-                pattern="[0-9]*"
-                placeholder="Custom"
-                value={custom}
-                onChange={(e) => {
-                  setCustom(e.target.value.replace(/[^0-9]/g, ""));
-                  setAmount(null);
-                }}
-                onBlur={() => {
-                  if (!custom) return;
-                  const n = parseInt(custom, 10);
-                  if (!Number.isFinite(n)) return;
-                  const fixed = n < 99 ? 99 : Math.floor(n / 100) * 100 + 99;
-                  setCustom(String(fixed));
-                }}
-                className="w-[160px] rounded-xl bg-white/5 pl-8 pr-4 py-3 text-base ring-1 ring-border placeholder:text-muted-foreground focus:ring-2 focus:outline-none"
-              />
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold">₹</span>
-            </div>
-          </div>
-
-          {/* Purpose selection removed as requested */}
-
-          {/* CTA */}
-          <div className="mt-8 flex justify-center">
-            <GradientButton onClick={proceed} className="min-w-[220px] text-[17px]">
-              Proceed to Donate
-            </GradientButton>
-          </div>
-
-          {/* Volunteer alternative */}
-          <div className="mt-4 text-center text-sm text-muted-foreground">
-            Prefer contributing your time? <a href="/volunteer" className="underline underline-offset-2">Volunteer for Seva</a>
-          </div>
-        </div>
-      </section>
+      {/* Donation options removed per request */}
 
       {/* Donor details */}
       <section className="mx-auto w-full max-w-4xl px-6 pb-10">
@@ -170,10 +94,10 @@ export default function DonatePage() {
             <Input label="Full Name" value={name} onChange={setName} required />
             <Input label="Email" type="email" value={email} onChange={setEmail} required />
             <FileInput
-              label={requirePan ? "Upload PAN Card (₹1999+)" : "Upload PAN Card (optional)"}
+              label={"Upload PAN Card (mandatory)"}
               file={panFile}
               onChange={setPanFile}
-              required={requirePan}
+              required
               accept="image/*,application/pdf"
             />
             <div className="md:col-span-2">
@@ -182,7 +106,7 @@ export default function DonatePage() {
           </div>
           <div className="mt-3 space-y-1 text-xs text-muted-foreground">
             <p>Receipts will be GST-compliant and emailed within 3–7 working days.</p>
-            <p>PAN card (image or PDF) is required for donations of ₹1999 and above. Max file size 5MB.</p>
+            <p>PAN card (image or PDF) is mandatory. Max file size 5MB.</p>
           </div>
           <div className="mt-6 flex justify-center">
             <GradientButton onClick={proceed}>
