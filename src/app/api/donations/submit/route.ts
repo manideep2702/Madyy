@@ -140,9 +140,14 @@ export async function POST(req: NextRequest) {
       const up = await admin.storage.from(storage_bucket).upload(key, shotBuf, { contentType: (screenshot as File).type || "image/png", upsert: false });
       if (!up.error) storage_path = key;
 
-      const panKey = `pan/${new Date().toISOString().slice(0, 10)}/${Date.now()}_${Math.random().toString(36).slice(2)}.${(pan as File).type?.split("/").pop() || "png"}`;
-      const upPan = await admin.storage.from(storage_bucket).upload(panKey, panBuf, { contentType: (pan as File).type || "image/png", upsert: false });
-      if (!upPan.error) { pan_bucket_ref = storage_bucket; pan_path_ref = panKey; }
+      // Upload PAN to its dedicated bucket
+      const pan_bucket = process.env.DONATION_PAN_BUCKET || "pan";
+      try {
+        await admin.storage.createBucket(pan_bucket, { public: false, fileSizeLimit: "5242880" });
+      } catch {}
+      const panKey = `uploads/${new Date().toISOString().slice(0, 10)}/${Date.now()}_${Math.random().toString(36).slice(2)}.${(pan as File).type?.split("/").pop() || "png"}`;
+      const upPan = await admin.storage.from(pan_bucket).upload(panKey, panBuf, { contentType: (pan as File).type || "image/png", upsert: false });
+      if (!upPan.error) { pan_bucket_ref = pan_bucket; pan_path_ref = panKey; }
 
       // Insert row
       const insert = await admin
