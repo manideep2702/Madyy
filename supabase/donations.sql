@@ -11,8 +11,15 @@ create table if not exists public.donations (
   phone text not null,
   address text,
   amount integer not null check (amount > 0),
+  -- Payment screenshot storage reference
   storage_bucket text,
   storage_path text,
+  -- PAN card storage reference
+  pan_bucket text,
+  pan_path text,
+  -- Optional metadata
+  submitted_ip text,
+  user_agent text,
   status text not null default 'submitted'
 );
 
@@ -29,3 +36,10 @@ alter table public.donations enable row level security;
 -- Storage bucket for donation screenshots (run via dashboard or REST)
 -- In code, we attempt to create bucket 'donations' if missing.
 
+-- Upgrades for existing tables (safe to re-run)
+do $$ begin
+  alter table public.donations add column if not exists pan_bucket text;
+  alter table public.donations add column if not exists pan_path text;
+  alter table public.donations add column if not exists submitted_ip text;
+  alter table public.donations add column if not exists user_agent text;
+exception when others then null; end $$;

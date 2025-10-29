@@ -32,11 +32,22 @@ export default function DonatePage() {
       alert("PAN file is too large. Maximum allowed size is 5MB.");
       return;
     }
-    // Persist donor details for the payment page
+    // Persist donor details and PAN for the payment page
     try {
       if (typeof window !== "undefined") {
         const donor = { name, email, phone, address };
         sessionStorage.setItem("donation:donor", JSON.stringify(donor));
+        if (panFile) {
+          const readAsDataURL = (f: File) => new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result || ""));
+            reader.onerror = reject;
+            reader.readAsDataURL(f);
+          });
+          const dataUrl = await readAsDataURL(panFile);
+          const meta = { name: panFile.name, type: panFile.type, dataUrl };
+          sessionStorage.setItem("donation:pan", JSON.stringify(meta));
+        }
       }
     } catch {}
     // Navigate to payment page

@@ -10,6 +10,7 @@ type Donor = { name: string; email: string; phone: string; address?: string } | 
 export default function DonatePayPage() {
   const [paidAmount, setPaidAmount] = useState<string>("");
   const [paymentShot, setPaymentShot] = useState<File | null>(null);
+  const [panShot, setPanShot] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [donor, setDonor] = useState<Donor>(null);
 
@@ -17,6 +18,16 @@ export default function DonatePayPage() {
     try {
       const raw = typeof window !== "undefined" ? sessionStorage.getItem("donation:donor") : null;
       if (raw) setDonor(JSON.parse(raw));
+      const panRaw = typeof window !== "undefined" ? sessionStorage.getItem("donation:pan") : null;
+      if (panRaw) {
+        const meta = JSON.parse(panRaw) as { name: string; type: string; dataUrl: string };
+        if (meta?.dataUrl && meta?.name) {
+          fetch(meta.dataUrl)
+            .then((r) => r.blob())
+            .then((blob) => setPanShot(new File([blob], meta.name, { type: meta.type || blob.type || "image/png" })))
+            .catch(() => {});
+        }
+      }
     } catch {}
   }, []);
 
@@ -34,8 +45,16 @@ export default function DonatePayPage() {
       alert("Please upload the payment screenshot.");
       return;
     }
+    if (!panShot) {
+      alert("Please upload the PAN card.");
+      return;
+    }
     if (paymentShot.size > 5 * 1024 * 1024) {
       alert("Screenshot is too large. Maximum allowed size is 5MB.");
+      return;
+    }
+    if (panShot.size > 5 * 1024 * 1024) {
+      alert("PAN file is too large. Maximum allowed size is 5MB.");
       return;
     }
     const fd = new FormData();
@@ -45,6 +64,7 @@ export default function DonatePayPage() {
     fd.set("address", donor.address || "");
     fd.set("amount", String(amt));
     fd.set("screenshot", paymentShot);
+    fd.set("pan", panShot);
     setSubmitting(true);
     try {
       const res = await fetch("/api/donations/submit", { method: "POST", body: fd });
@@ -107,6 +127,13 @@ export default function DonatePayPage() {
                 onChange={setPaymentShot}
                 required
                 accept="image/*"
+              />
+              <FileInput
+                label="PAN Card (required)"
+                file={panShot}
+                onChange={setPanShot}
+                required
+                accept="image/*,application/pdf"
               />
             </div>
 

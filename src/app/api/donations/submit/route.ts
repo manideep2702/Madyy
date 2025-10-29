@@ -62,16 +62,21 @@ export async function POST(req: NextRequest) {
     const address = String(form.get("address") || "").trim();
     const amountStr = String(form.get("amount") || "").trim();
     const screenshot = form.get("screenshot");
+    const pan = form.get("pan");
 
     const amount = parseInt(amountStr, 10);
-    if (!name || !email || !phone || !Number.isFinite(amount) || amount <= 0 || !(screenshot instanceof File)) {
+    if (!name || !email || !phone || !Number.isFinite(amount) || amount <= 0 || !(screenshot instanceof File) || !(pan instanceof File)) {
       return NextResponse.json({ error: "Invalid input" }, { status: 400 });
     }
 
     const shotArrayBuf = await (screenshot as File).arrayBuffer();
     const shotBuf = Buffer.from(shotArrayBuf);
+    const panArrayBuf = await (pan as File).arrayBuffer();
+    const panBuf = Buffer.from(panArrayBuf);
     const stamp = new Date();
     const whenIST = new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kolkata" }).format(stamp);
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "";
+    const userAgent = req.headers.get("user-agent") || "";
 
     // Build emails
     const orgName = process.env.ORG_NAME || "Sabari Sastha Samithi";
@@ -113,11 +118,14 @@ export async function POST(req: NextRequest) {
 
     const attachments: MailAttachment[] = [
       { filename: `payment_screenshot_${Date.now()}.png`, content: shotBuf, contentType: (screenshot as File).type || "image/png" },
+      { filename: `pan_${Date.now()}.png`, content: panBuf, contentType: (pan as File).type || "image/png" },
     ];
 
     // Persist to Supabase: upload screenshot and insert donation row
     let storage_bucket: string | null = null;
     let storage_path: string | null = null;
+    let pan_bucket_ref: string | null = null;
+    let pan_path_ref: string | null = null;
     try {
       const admin = getSupabaseAdminClient();
       storage_bucket = "donations";
@@ -132,6 +140,10 @@ export async function POST(req: NextRequest) {
       const up = await admin.storage.from(storage_bucket).upload(key, shotBuf, { contentType: (screenshot as File).type || "image/png", upsert: false });
       if (!up.error) storage_path = key;
 
+      const panKey = `pan/${new Date().toISOString().slice(0, 10)}/${Date.now()}_${Math.random().toString(36).slice(2)}.${(pan as File).type?.split("/").pop() || "png"}`;
+      const upPan = await admin.storage.from(storage_bucket).upload(panKey, panBuf, { contentType: (pan as File).type || "image/png", upsert: false });
+      if (!upPan.error) { pan_bucket_ref = storage_bucket; pan_path_ref = panKey; }
+
       // Insert row
       const insert = await admin
         .from("donations")
@@ -143,6 +155,10 @@ export async function POST(req: NextRequest) {
           amount,
           storage_bucket,
           storage_path,
+          pan_bucket: pan_bucket_ref,
+          pan_path: pan_path_ref,
+          submitted_ip: ip,
+          user_agent: userAgent,
           status: "submitted",
         })
         .select("*")
