@@ -22,21 +22,7 @@ export default async function Home() {
   const aboutImg = await pickGalleryImage();
   return (
     <div className="min-h-screen">
-      {/* Home logo (top-left), stays above hero content */}
-      <a
-        href="/"
-        className="fixed left-4 top-4 z-[55] inline-flex items-center gap-3"
-        aria-label="Home"
-      >
-        <img
-          src="/logo.jpeg"
-          alt="Sree Sabari Sastha Seva Samithi logo"
-          className="h-10 w-10 rounded-full object-cover ring-1 ring-white/20"
-        />
-        <span className="text-white/95 font-semibold text-xs sm:text-sm tracking-tight">
-          Sree Sabari Sastha Seva Samithi
-        </span>
-      </a>
+      {/* Removed floating top-left logo to avoid duplication with navbar brand */}
 
       <ScrollExpandMedia
         mediaType="image"

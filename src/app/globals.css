@@ -76,6 +76,13 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Brand colors sampled to match site logo */
+  --brand-purple-dark: #130a33; /* deep header strip */
+  --brand-purple: #27155b;      /* main navbar background */
+  --brand-purple-2: #2f1a6f;    /* subtle hover/variant */
+  --brand-orange: #e06a00;      /* active pill */
+  --brand-text: #ffffff;        /* nav text */
 }
 
 .dark {
@@ -110,6 +117,13 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  /* Keep brand variables consistent in dark mode */
+  --brand-purple-dark: #130a33;
+  --brand-purple: #27155b;
+  --brand-purple-2: #2f1a6f;
+  --brand-orange: #e06a00;
+  --brand-text: #ffffff;
 }
 
 @layer base {

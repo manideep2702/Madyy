@@ -40,13 +40,10 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className={`${geistSans.variable} ${geistMono.variable} ${notoSerif.className} antialiased`}>
         <Providers>
-          <header className="absolute top-2 md:top-3 left-0 right-0 z-50 w-full bg-transparent">
-            <div className="relative flex justify-center py-2 md:py-3">
-              <SiteNavbar />
-            </div>
+          <header className="sticky top-0 z-50 w-full">
+            <SiteNavbar />
           </header>
-          {/* Reserve space so fixed nav does not overlap content */}
-          <main className="pb-20 sm:pb-0 sm:pt-16">{children}</main>
+          <main className="pt-0">{children}</main>
           <footer className="border-t border-white/10 bg-background/60">
             <Footer7
               logo={{
