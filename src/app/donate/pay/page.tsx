@@ -1,18 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import RequireAuth from "@/components/auth/require-auth";
 import { GradientButton } from "@/components/ui/gradient-button";
 import Link from "next/link";
 
+type Donor = { name: string; email: string; phone: string; address?: string } | null;
+
 export default function DonatePayPage() {
   const [paidAmount, setPaidAmount] = useState<string>("");
   const [paymentShot, setPaymentShot] = useState<File | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [donor, setDonor] = useState<Donor>(null);
+
+  useEffect(() => {
+    try {
+      const raw = typeof window !== "undefined" ? sessionStorage.getItem("donation:donor") : null;
+      if (raw) setDonor(JSON.parse(raw));
+    } catch {}
+  }, []);
 
   async function submitDonation() {
     const amt = parseInt(paidAmount, 10);
     if (!Number.isFinite(amt) || amt <= 0) {
       alert("Please enter the amount you paid.");
+      return;
+    }
+    if (!donor?.email || !donor?.name || !donor?.phone) {
+      alert("Donor details missing. Please go back and fill the form.");
       return;
     }
     if (!paymentShot) {
@@ -23,9 +38,28 @@ export default function DonatePayPage() {
       alert("Screenshot is too large. Maximum allowed size is 5MB.");
       return;
     }
-    alert(`Thank you! We received your details for ₹${amt}. We will verify and send the receipt by email.`);
-    setPaidAmount("");
-    setPaymentShot(null);
+    const fd = new FormData();
+    fd.set("name", donor.name);
+    fd.set("email", donor.email);
+    fd.set("phone", donor.phone);
+    fd.set("address", donor.address || "");
+    fd.set("amount", String(amt));
+    fd.set("screenshot", paymentShot);
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/donations/submit", { method: "POST", body: fd });
+      if (!res.ok) {
+        const msg = await res.text();
+        throw new Error(msg || "Submission failed");
+      }
+      alert(`Thank you, ${donor.name}! We received your donation details for ₹${amt}. Invoice will be shared in 3–5 days.`);
+      setPaidAmount("");
+      setPaymentShot(null);
+    } catch (err: any) {
+      alert(err?.message || "Failed to submit donation. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -43,6 +77,16 @@ export default function DonatePayPage() {
               <img src="/payment.png" alt="Payment QR" className="w-[260px] h-[260px] rounded-lg ring-1 ring-border bg-white object-contain" />
               <span className="text-xs text-muted-foreground">Accepted on major UPI apps</span>
             </div>
+
+            {donor ? (
+              <div className="mt-3 text-sm text-muted-foreground">
+                <div>Donor: <span className="text-foreground font-medium">{donor.name}</span></div>
+                <div>Email: {donor.email} • Phone: {donor.phone}</div>
+                {donor.address ? <div>Address: {donor.address}</div> : null}
+              </div>
+            ) : (
+              <div className="mt-3 text-sm text-red-500">Donor details not found. <Link className="underline underline-offset-2" href="/donate">Back to Donor Details</Link></div>
+            )}
 
             <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
               <label className="block text-left">
@@ -67,7 +111,7 @@ export default function DonatePayPage() {
             </div>
 
             <div className="mt-6 flex justify-center">
-              <GradientButton onClick={submitDonation}>
+              <GradientButton onClick={submitDonation} disabled={submitting}>
                 Submit Donation Details
               </GradientButton>
             </div>
@@ -105,4 +149,3 @@ function FileInput({ label, file, onChange, required = false, accept = "*/*" }: 
     </div>
   );
 }
-
