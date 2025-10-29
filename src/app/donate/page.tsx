@@ -1,23 +1,20 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { ShieldCheck, BadgeCheck, FileText, Phone, Mail, MapPin, HeartHandshake } from "lucide-react";
 import { GradientButton } from "@/components/ui/gradient-button";
 import RequireAuth from "@/components/auth/require-auth";
 
 export default function DonatePage() {
   // Amount selection removed per request
-  const [step, setStep] = useState<"form" | "payment">("form");
+  const router = useRouter();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [panFile, setPanFile] = useState<File | null>(null);
   const [address, setAddress] = useState("");
-
-  // Payment details collected after QR scan
-  const [paidAmount, setPaidAmount] = useState<string>("");
-  const [paymentShot, setPaymentShot] = useState<File | null>(null);
 
   // Make PAN card mandatory for all donations
   const requirePan = true;
@@ -35,29 +32,8 @@ export default function DonatePage() {
       alert("PAN file is too large. Maximum allowed size is 5MB.");
       return;
     }
-    // Move to payment QR step
-    setStep("payment");
-  }
-
-  async function submitDonation() {
-    const amt = parseInt(paidAmount, 10);
-    if (!Number.isFinite(amt) || amt <= 0) {
-      alert("Please enter the amount you paid.");
-      return;
-    }
-    if (!paymentShot) {
-      alert("Please upload the payment screenshot.");
-      return;
-    }
-    if (paymentShot.size > 5 * 1024 * 1024) {
-      alert("Screenshot is too large. Maximum allowed size is 5MB.");
-      return;
-    }
-    // In a real app, upload details to backend here
-    alert(`Thank you, ${name}! We received your details for ₹${amt}. We will verify and send the receipt to ${email}.`);
-    // Optionally reset payment fields
-    setPaidAmount("");
-    setPaymentShot(null);
+    // Navigate to payment page
+    router.push("/donate/pay");
   }
 
   return (
@@ -123,48 +99,6 @@ export default function DonatePage() {
           </div>
         </div>
       </section>
-
-      {step === "payment" && (
-        <section className="mx-auto w-full max-w-4xl px-6 pb-10">
-          <div className="rounded-2xl border border-border bg-card/70 p-6 shadow-sm">
-            <h3 className="text-xl font-semibold">Pay via QR</h3>
-            <p className="mt-2 text-sm text-muted-foreground">Scan the QR with your UPI app to complete the payment. After paying, enter the paid amount and upload the payment screenshot.</p>
-
-            <div className="mt-5 flex flex-col items-center gap-3">
-              <img src="/payment.png" alt="Payment QR" className="w-[260px] h-[260px] rounded-lg ring-1 ring-border bg-white object-contain" />
-              <span className="text-xs text-muted-foreground">Accepted on major UPI apps</span>
-            </div>
-
-            <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
-              <label className="block text-left">
-                <span className="mb-1 block text-xs font-medium text-muted-foreground">Donation Amount *</span>
-                <input
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  placeholder="Enter amount paid"
-                  value={paidAmount}
-                  onChange={(e) => setPaidAmount(e.target.value.replace(/[^0-9]/g, ""))}
-                  className="w-full rounded-xl bg-white/5 px-4 py-3 text-sm ring-1 ring-border placeholder:text-muted-foreground focus:ring-2 focus:outline-none"
-                />
-              </label>
-
-              <FileInput
-                label="Payment Screenshot (required)"
-                file={paymentShot}
-                onChange={setPaymentShot}
-                required
-                accept="image/*"
-              />
-            </div>
-
-            <div className="mt-6 flex justify-center">
-              <GradientButton onClick={submitDonation}>
-                Submit Donation Details
-              </GradientButton>
-            </div>
-          </div>
-        </section>
-      )}
 
       {/* FAQ */}
       <section className="mx-auto w-full max-w-4xl px-6 pb-16">
