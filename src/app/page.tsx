@@ -30,6 +30,10 @@ export default async function Home() {
         bgImageSrc="/bg.webp"
         title="swamiye saranam ayyappa"
         date=""
+        leftQrSrc="/Pooja_Booking-1024.jpeg"
+        rightQrSrc="/Annadanam_Booking-1024.jpeg"
+        qrAltLeft="Pooja Booking QR"
+        qrAltRight="Annadanam Booking QR"
       />
 
       {/* Compact cards after hero */}

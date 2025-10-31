@@ -21,6 +21,11 @@ interface ScrollExpandMediaProps {
   scrollToExpand?: string;
   textBlend?: boolean;
   children?: ReactNode;
+  // Optional QR images pinned left/right that fade on scroll
+  leftQrSrc?: string;
+  rightQrSrc?: string;
+  qrAltLeft?: string;
+  qrAltRight?: string;
 }
 
 const ScrollExpandMedia = ({
@@ -33,6 +38,10 @@ const ScrollExpandMedia = ({
   scrollToExpand,
   textBlend,
   children,
+  leftQrSrc,
+  rightQrSrc,
+  qrAltLeft,
+  qrAltRight,
 }: ScrollExpandMediaProps) => {
   const [scrollProgress, setScrollProgress] = useState<number>(0);
   const [showContent, setShowContent] = useState<boolean>(false);
@@ -164,6 +173,7 @@ const ScrollExpandMedia = ({
   const mediaWidth = 300 + scrollProgress * (isMobileState ? 650 : 1250);
   const mediaHeight = 400 + scrollProgress * (isMobileState ? 200 : 400);
   const textTranslateX = scrollProgress * (isMobileState ? 180 : 150);
+  const qrOpacity = 1 - Math.min(scrollProgress * 3, 1);
 
   const firstWord = title ? title.split(' ')[0] : '';
   const restOfTitle = title ? title.split(' ').slice(1).join(' ') : '';
@@ -175,6 +185,42 @@ const ScrollExpandMedia = ({
     >
       <section className='relative flex flex-col items-center justify-start min-h-[100dvh]'>
         <div className='relative w-full flex flex-col items-center min-h-[100dvh]'>
+          {/* Optional left/right QR images that fade out on scroll */}
+          {leftQrSrc && (
+            <motion.div
+              className='fixed left-3 md:left-6 top-1/2 -translate-y-1/2 z-20 pointer-events-none'
+              initial={{ opacity: 1 }}
+              animate={{ opacity: qrOpacity }}
+              transition={{ duration: 0.2 }}
+            >
+              <Image
+                src={leftQrSrc}
+                alt={qrAltLeft || 'Pooja QR'}
+                width={360}
+                height={360}
+                className='w-44 h-44 md:w-64 md:h-64 object-contain rounded-xl shadow-none'
+                priority
+              />
+            </motion.div>
+          )}
+
+          {rightQrSrc && (
+            <motion.div
+              className='fixed right-3 md:right-6 top-1/2 -translate-y-1/2 z-20 pointer-events-none'
+              initial={{ opacity: 1 }}
+              animate={{ opacity: qrOpacity }}
+              transition={{ duration: 0.2 }}
+            >
+              <Image
+                src={rightQrSrc}
+                alt={qrAltRight || 'Annadanam QR'}
+                width={360}
+                height={360}
+                className='w-44 h-44 md:w-64 md:h-64 object-contain rounded-xl shadow-none'
+                priority
+              />
+            </motion.div>
+          )}
           <motion.div
             className='absolute inset-0 z-0 h-full'
             initial={{ opacity: 0 }}
@@ -335,4 +381,3 @@ const ScrollExpandMedia = ({
 };
 
 export default ScrollExpandMedia;
-

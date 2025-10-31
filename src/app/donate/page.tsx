@@ -67,10 +67,10 @@ export default function DonatePage() {
 
         <div className="mx-auto max-w-5xl px-6 pt-28 pb-14 text-center">
           <div className="inline-flex items-center justify-center gap-2 rounded-full bg-black/40 px-4 py-2 text-white ring-1 ring-white/20 backdrop-blur">
-            <HeartHandshake size={18} /> Support Annadanam & Samithi Services
+            <HeartHandshake size={18} /> Support Annadanam & it's Services
           </div>
           <h1 className="mt-4 text-3xl md:text-5xl font-bold tracking-tight text-white">
-            Support Annadanam & Samithi Services.
+            Support Annadanam & it's Services.
           </h1>
           <p className="mt-3 text-white/90 md:text-lg">
             Every contribution sustains daily poojas, annadanam, and community programs of the Samithi.

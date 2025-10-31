@@ -55,12 +55,16 @@ export async function POST(req: NextRequest) {
     const name = String(body?.name || "").trim();
     const email = String(body?.email || "").trim();
     const phone = String(body?.phone || "").trim();
+    const spouse_name = String(body?.spouse_name || "").trim();
+    const children_names = String(body?.children_names || "").trim() || null;
+    const nakshatram = String(body?.nakshatram || "").trim();
+    const gothram = String(body?.gothram || "").trim();
     const date = String(body?.date || "").trim(); // YYYY-MM-DD
     const session = String(body?.session || "").trim(); // '10:30 AM' | '6:30 PM'
     const user_id = String(body?.user_id || "").trim() || null;
 
-    if (!name || !email || !date || !session || !phone) {
-      return NextResponse.json({ error: "Missing required fields (name, email, phone, date, session)" }, { status: 400 });
+    if (!name || !email || !date || !session || !phone || !spouse_name || !nakshatram || !gothram) {
+      return NextResponse.json({ error: "Missing required fields (name, email, phone, spouse_name, nakshatram, gothram, date, session)" }, { status: 400 });
     }
     if (session !== "10:30 AM" && session !== "6:30 PM") {
       return NextResponse.json({ error: "Invalid session" }, { status: 400 });
@@ -76,12 +80,20 @@ export async function POST(req: NextRequest) {
     try {
       await admin.rpc("noop");
     } catch {}
-    const res = await admin
+    let res = await admin
       .from("Pooja-Bookings" as any)
-      .insert({ name, email, phone, date, session, user_id })
+      .insert({ name, email, phone, date, session, user_id, spouse_name, children_names, nakshatram, gothram })
       .select("*")
       .single();
-    if (res.error) throw res.error;
+    if (res.error) {
+      // Fallback if new columns are not present yet
+      res = await admin
+        .from("Pooja-Bookings" as any)
+        .insert({ name, email, phone, date, session, user_id })
+        .select("*")
+        .single();
+      if (res.error) throw res.error;
+    }
 
     const site = getSiteUrl(req);
     const logoUrl = `${site}/logo.jpeg`;
@@ -100,6 +112,10 @@ export async function POST(req: NextRequest) {
           <li><strong>Date:</strong> ${date}</li>
           <li><strong>Session:</strong> ${session}</li>
           ${phone ? `<li><strong>Phone:</strong> ${phone}</li>` : ""}
+          ${spouse_name ? `<li><strong>Spouse:</strong> ${spouse_name}</li>` : ""}
+          ${children_names ? `<li><strong>Children:</strong> ${children_names}</li>` : ""}
+          ${nakshatram ? `<li><strong>Nakshatram:</strong> ${nakshatram}</li>` : ""}
+          ${gothram ? `<li><strong>Gothram:</strong> ${gothram}</li>` : ""}
         </ul>
         <p>Swamiye Saranam Ayyappa</p>
       </div>`;
@@ -119,6 +135,10 @@ export async function POST(req: NextRequest) {
           ${phone ? `<li><strong>Phone:</strong> ${phone}</li>` : ""}
           <li><strong>Date:</strong> ${date}</li>
           <li><strong>Session:</strong> ${session}</li>
+          ${spouse_name ? `<li><strong>Spouse:</strong> ${spouse_name}</li>` : ""}
+          ${children_names ? `<li><strong>Children:</strong> ${children_names}</li>` : ""}
+          ${nakshatram ? `<li><strong>Nakshatram:</strong> ${nakshatram}</li>` : ""}
+          ${gothram ? `<li><strong>Gothram:</strong> ${gothram}</li>` : ""}
         </ul>
       </div>`;
 

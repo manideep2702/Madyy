@@ -39,13 +39,17 @@ BEGIN
   BEGIN
     ALTER TABLE public."Slots" DROP CONSTRAINT IF EXISTS slots_date_in_season;
   EXCEPTION WHEN undefined_object THEN NULL; END;
+  -- Clean up any legacy rows outside the allowed window to avoid constraint failure
+  DELETE FROM public."Slots"
+  WHERE NOT (
+    (date >= DATE '2025-11-05' AND date <= DATE '2026-01-07')
+    OR date = DATE '2025-10-31'
+  );
   ALTER TABLE public."Slots"
     ADD CONSTRAINT slots_date_in_season
     CHECK (
       (date >= DATE '2025-11-05' AND date <= DATE '2026-01-07')
-      OR date = DATE '2025-10-10'
-      OR date = DATE '2025-10-17'
-      OR date = DATE '2025-10-23'
+      OR date = DATE '2025-10-31'
     );
 END $$;
 
@@ -72,13 +76,17 @@ BEGIN
   BEGIN
     ALTER TABLE public."Bookings" DROP CONSTRAINT IF EXISTS bookings_date_in_season;
   EXCEPTION WHEN undefined_object THEN NULL; END;
+  -- Clean up legacy bookings outside allowed window to avoid constraint failure
+  DELETE FROM public."Bookings"
+  WHERE date IS NOT NULL AND NOT (
+    (date >= DATE '2025-11-05' AND date <= DATE '2026-01-07')
+    OR date = DATE '2025-10-31'
+  );
   ALTER TABLE public."Bookings"
     ADD CONSTRAINT bookings_date_in_season
     CHECK (
       (date >= DATE '2025-11-05' AND date <= DATE '2026-01-07')
-      OR date = DATE '2025-10-10'
-      OR date = DATE '2025-10-17'
-      OR date = DATE '2025-10-23'
+      OR date = DATE '2025-10-31'
     );
 END $$;
 
@@ -134,9 +142,7 @@ RETURNS TABLE (
 BEGIN
   -- Return empty set if out of season window
   IF NOT (d BETWEEN DATE '2025-11-05' AND DATE '2026-01-07'
-          OR d = DATE '2025-10-10'
-          OR d = DATE '2025-10-17'
-          OR d = DATE '2025-10-23') THEN
+          OR d = DATE '2025-10-31') THEN
     RETURN;
   END IF;
   RETURN QUERY
@@ -199,9 +205,7 @@ DECLARE
 BEGIN
   -- Enforce season window
   IF NOT (d BETWEEN DATE '2025-11-05' AND DATE '2026-01-07'
-          OR d = DATE '2025-10-10'
-          OR d = DATE '2025-10-17'
-          OR d = DATE '2025-10-23') THEN
+          OR d = DATE '2025-10-31') THEN
     RAISE EXCEPTION 'Out of Annadanam season';
   END IF;
   IF qty IS NULL OR qty <> 1 THEN
@@ -330,50 +334,24 @@ BEGIN
     INSERT INTO public."Slots" (date, session, capacity, status) VALUES (v_date, '9:30 PM - 10:00 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
     v_date := v_date + INTERVAL '1 day';
   END LOOP;
-  -- Extra special date outside main window
+  -- Extra special date outside main window (31-Oct-2025)
   PERFORM 1;
   IF NOT EXISTS (
-    SELECT 1 FROM public."Slots" WHERE date = DATE '2025-10-10'
+    SELECT 1 FROM public."Slots" WHERE date = DATE '2025-10-31'
   ) THEN
-    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-10', '1:00 PM - 1:30 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
-    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-10', '1:30 PM - 2:00 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
-    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-10', '2:00 PM - 2:30 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
-    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-10', '2:30 PM - 3:00 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
-    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-10', '8:00 PM - 8:30 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
-    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-10', '8:30 PM - 9:00 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
-    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-10', '9:00 PM - 9:30 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
-    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-10', '9:30 PM - 10:00 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
-  END IF;
-  -- Extra special date outside main window
-  IF NOT EXISTS (
-    SELECT 1 FROM public."Slots" WHERE date = DATE '2025-10-17'
-  ) THEN
-    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-17', '1:00 PM - 1:30 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
-    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-17', '1:30 PM - 2:00 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
-    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-17', '2:00 PM - 2:30 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
-    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-17', '2:30 PM - 3:00 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
-    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-17', '8:00 PM - 8:30 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
-    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-17', '8:30 PM - 9:00 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
-    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-17', '9:00 PM - 9:30 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
-    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-17', '9:30 PM - 10:00 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
-  END IF;
-  -- Extra special date outside main window
-  IF NOT EXISTS (
-    SELECT 1 FROM public."Slots" WHERE date = DATE '2025-10-23'
-  ) THEN
-    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-23', '1:00 PM - 1:30 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
-    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-23', '1:30 PM - 2:00 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
-    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-23', '2:00 PM - 2:30 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
-    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-23', '2:30 PM - 3:00 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
-    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-23', '8:00 PM - 8:30 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
-    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-23', '8:30 PM - 9:00 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
-    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-23', '9:00 PM - 9:30 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
-    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-23', '9:30 PM - 10:00 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
+    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-31', '1:00 PM - 1:30 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
+    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-31', '1:30 PM - 2:00 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
+    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-31', '2:00 PM - 2:30 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
+    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-31', '2:30 PM - 3:00 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
+    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-31', '8:00 PM - 8:30 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
+    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-31', '8:30 PM - 9:00 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
+    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-31', '9:00 PM - 9:30 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
+    INSERT INTO public."Slots" (date, session, capacity, status) VALUES (DATE '2025-10-31', '9:30 PM - 10:00 PM', 40, 'open') ON CONFLICT (date, session) DO NOTHING;
   END IF;
   -- Ensure all seeded/legacy slots use capacity 40 per time slot
   UPDATE public."Slots"
     SET capacity = 40
-    WHERE (date BETWEEN DATE '2025-11-05' AND DATE '2026-01-07' OR date = DATE '2025-10-10' OR date = DATE '2025-10-17' OR date = DATE '2025-10-23')
+    WHERE (date BETWEEN DATE '2025-11-05' AND DATE '2026-01-07' OR date = DATE '2025-10-31')
       AND session IN (
         '1:00 PM - 1:30 PM','1:30 PM - 2:00 PM','2:00 PM - 2:30 PM','2:30 PM - 3:00 PM',
         '8:00 PM - 8:30 PM','8:30 PM - 9:00 PM','9:00 PM - 9:30 PM','9:30 PM - 10:00 PM'

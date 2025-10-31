@@ -22,6 +22,10 @@ export default function PoojaBookingPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [spouseName, setSpouseName] = useState("");
+  const [childrenNames, setChildrenNames] = useState("");
+  const [nakshatram, setNakshatram] = useState("");
+  const [gothram, setGothram] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => { setSelectedDate(START); }, []);
@@ -35,8 +39,8 @@ export default function PoojaBookingPage() {
 
   const book = async () => {
     try {
-      if (!name.trim() || !email.trim() || !session || !phone.trim()) {
-        show({ title: "Missing info", description: "Please fill name, email, phone and select a session.", variant: "warning" });
+      if (!name.trim() || !email.trim() || !session || !phone.trim() || !spouseName.trim() || !nakshatram.trim() || !gothram.trim()) {
+        show({ title: "Missing info", description: "Please fill name, email, phone, spouse name, nakshatram, gothram and select a session.", variant: "warning" });
         return;
       }
       setSubmitting(true);
@@ -46,7 +50,18 @@ export default function PoojaBookingPage() {
       const res = await fetch('/api/pooja/book', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: dateIso, session, name: name.trim(), email: email.trim(), phone: phone.trim(), user_id: user?.id || null }),
+        body: JSON.stringify({
+          date: dateIso,
+          session,
+          name: name.trim(),
+          email: email.trim(),
+          phone: phone.trim(),
+          spouse_name: spouseName.trim(),
+          children_names: childrenNames.trim() || null,
+          nakshatram: nakshatram.trim(),
+          gothram: gothram.trim(),
+          user_id: user?.id || null,
+        }),
       });
       const j = await res.json();
       if (!res.ok) {
@@ -105,6 +120,24 @@ export default function PoojaBookingPage() {
                     <Label htmlFor="phone">Phone Number</Label>
                     <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Your phone number" required autoComplete="tel" inputMode="tel" pattern="^\+?[0-9]{10,15}$" />
                   </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="spouse">Spouse Name</Label>
+                      <Input id="spouse" value={spouseName} onChange={(e) => setSpouseName(e.target.value)} placeholder="Spouse name" autoCapitalize="words" required />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="children">Children Names (optional)</Label>
+                      <Input id="children" value={childrenNames} onChange={(e) => setChildrenNames(e.target.value)} placeholder="Comma separated" autoCapitalize="words" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="nakshatram">Nakshatram</Label>
+                      <Input id="nakshatram" value={nakshatram} onChange={(e) => setNakshatram(e.target.value)} placeholder="e.g., Rohini" autoCapitalize="words" required />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="gothram">Gothram</Label>
+                      <Input id="gothram" value={gothram} onChange={(e) => setGothram(e.target.value)} placeholder="Your Gothram" autoCapitalize="words" required />
+                    </div>
+                  </div>
                   <div className="space-y-1">
                     <Label>Session</Label>
                     <select className="w-full rounded-md border border-border bg-background p-3 text-base" value={session} onChange={(e) => setSession(e.target.value)} required aria-label="Select session">
@@ -128,6 +161,11 @@ export default function PoojaBookingPage() {
               </div>
             </div>
           </section>
+
+          {/* Note below booking form */}
+          <p className="text-center text-sm text-muted-foreground">
+            Note: Pooja and Panthulu garu fee is borne by the person taking the pooja.
+          </p>
         </div>
       </main>
     </RequireAuth>

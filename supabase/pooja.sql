@@ -10,7 +10,12 @@ create table if not exists public."Pooja-Bookings" (
   user_id uuid null references auth.users(id) on delete set null,
   name text not null,
   email text not null,
-  phone text null
+  phone text null,
+  -- New mandatory/optional devotional details
+  spouse_name text not null default '' check (length(btrim(spouse_name)) > 0),
+  children_names text null,
+  nakshatram text not null default '' check (length(btrim(nakshatram)) > 0),
+  gothram text not null default '' check (length(btrim(gothram)) > 0)
 );
 
 -- Enforce booking window at the database layer as well
@@ -22,6 +27,54 @@ begin
   alter table public."Pooja-Bookings"
     add constraint pooja_date_window
     check (date between date '2025-11-06' and date '2026-01-07');
+end $$;
+
+-- Add/upgrade new columns if the table already existed previously
+do $$
+begin
+  -- spouse_name (required, non-blank)
+  begin
+    alter table public."Pooja-Bookings" add column if not exists spouse_name text;
+  exception when duplicate_column then null; end;
+  update public."Pooja-Bookings" set spouse_name = coalesce(nullif(btrim(spouse_name), ''),'Unknown') where spouse_name is null or btrim(spouse_name) = '';
+  begin
+    alter table public."Pooja-Bookings" alter column spouse_name set not null;
+  exception when others then null; end;
+  begin
+    alter table public."Pooja-Bookings" drop constraint if exists pooja_spouse_nonblank;
+  exception when undefined_object then null; end;
+  alter table public."Pooja-Bookings" add constraint pooja_spouse_nonblank check (length(btrim(spouse_name)) > 0);
+
+  -- children_names (optional)
+  begin
+    alter table public."Pooja-Bookings" add column if not exists children_names text;
+  exception when duplicate_column then null; end;
+
+  -- nakshatram (required, non-blank)
+  begin
+    alter table public."Pooja-Bookings" add column if not exists nakshatram text;
+  exception when duplicate_column then null; end;
+  update public."Pooja-Bookings" set nakshatram = coalesce(nullif(btrim(nakshatram), ''),'Unknown') where nakshatram is null or btrim(nakshatram) = '';
+  begin
+    alter table public."Pooja-Bookings" alter column nakshatram set not null;
+  exception when others then null; end;
+  begin
+    alter table public."Pooja-Bookings" drop constraint if exists pooja_nakshatram_nonblank;
+  exception when undefined_object then null; end;
+  alter table public."Pooja-Bookings" add constraint pooja_nakshatram_nonblank check (length(btrim(nakshatram)) > 0);
+
+  -- gothram (required, non-blank)
+  begin
+    alter table public."Pooja-Bookings" add column if not exists gothram text;
+  exception when duplicate_column then null; end;
+  update public."Pooja-Bookings" set gothram = coalesce(nullif(btrim(gothram), ''),'Unknown') where gothram is null or btrim(gothram) = '';
+  begin
+    alter table public."Pooja-Bookings" alter column gothram set not null;
+  exception when others then null; end;
+  begin
+    alter table public."Pooja-Bookings" drop constraint if exists pooja_gothram_nonblank;
+  exception when undefined_object then null; end;
+  alter table public."Pooja-Bookings" add constraint pooja_gothram_nonblank check (length(btrim(gothram)) > 0);
 end $$;
 
 alter table public."Pooja-Bookings" enable row level security;

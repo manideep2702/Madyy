@@ -61,9 +61,7 @@ function seasonForNow(now = new Date()) {
 
 // Extra one-off booking dates allowed outside regular season
 const EXTRA_DATES: string[] = [
-  "2025-10-10",
-  "2025-10-17",
-  "2025-10-23",
+  "2025-10-31",
 ];
 
 function inSeason(date: Date, now = new Date()): boolean {
@@ -198,8 +196,8 @@ function SessionPicker({
       const groupRemaining = isAfternoon ? 150 - aftTotal : 150 - eveTotal;
       if (groupRemaining <= 0) infoText = "Session full";
       else infoText = isAfternoon
-        ? "Booking window: 5:00–11:30 IST"
-        : "Booking window: 15:00–19:30 IST";
+        ? "Booking window: 5:00 AM–11:30 AM IST"
+        : "Booking window: 3:00 PM–7:30 PM IST";
     }
     return (
       <Card>
@@ -516,7 +514,7 @@ export default function AnnadanamBooking() {
     <div className="container mx-auto py-8 px-4 max-w-6xl">
       <div className="mb-8">
         <h2 className="text-2xl font-semibold">Annadanam Slot Booking</h2>
-        <p className="text-muted-foreground">Choose a time below. Booking windows (IST): Afternoon 5:00–11:30, Evening 15:00–19:30.</p>
+        <p className="text-muted-foreground">Choose a time below. Booking windows (IST): Morning 5:00 AM–11:30 AM, Evening 3:00 PM – 7:30 PM.</p>
       </div>
       <div className="grid gap-6 lg:grid-cols-3 mb-8">
         <div className="lg:col-span-1">
